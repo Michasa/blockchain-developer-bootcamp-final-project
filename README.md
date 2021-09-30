@@ -1,8 +1,7 @@
-# aCOUNTabl.ETH.y 🖐️
+# accountabil.ETH.y 🖐️
 ## *My promise is BOND!* 💯
 - A platform where people further motivate themselves to complete goals further by staking ETH on their commitments.
 - Depends on an external api that providing information on trackable commitment's fulfilment.
-
 
 ## Work Flow
 1. On Front End Application user inputs:
