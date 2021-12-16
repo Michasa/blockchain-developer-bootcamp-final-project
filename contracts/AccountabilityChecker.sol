@@ -75,18 +75,19 @@ contract AccountabilityChecker {
 
     //ANCHOR MAIN FUNCTIONS
     // 🌟 CREATE PROMISE
-    function activatePromise(bytes32[] memory _commitments, uint256 due_date)
+    function activatePromise(bytes32[] memory my_commitments, uint256 due_date)
         public
         payable
         isOwner
         checkPromiseIsntActive
     {
-        require(commitments.length == 3, "3 commitments only");
+        require(my_commitments.length >= 3, "3 commitments only");
         require(msg.value > stake_amount, "insufficient amount provided");
         // TODO require(promise_deadline > "is at least 24hrs away");
+
         isPromiseActive = true;
-        for (uint256 i = 0; i < _commitments.length; i++) {
-            commitments.push(_commitments[i]);
+        for (uint256 i = 0; i < my_commitments.length; i++) {
+            commitments.push(my_commitments[i]);
         }
         money_pot = msg.value;
         promise_deadline = due_date;

@@ -1,28 +1,34 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 require("mocha-steps");
+const web3 = require("web3");
 
 describe("My Smart Contract Tests \n", async function () {
   let owner;
   let notOwner;
   let rest;
   let AccountabilityChecker;
+  let validTxn;
 
   before(async function () {
     let Contract = await ethers.getContractFactory("AccountabilityChecker");
     AccountabilityChecker = await Contract.deploy();
-
+    //FIXME there is something wrong with this array
+    const COMMITMENTS = [
+      "read a book a day",
+      "go to the gym",
+      "eat some fruit",
+    ];
     [owner, notOwner, , ...rest] = await ethers.getSigners();
 
-    let commitmentTxn = {
+    //Sent from Front End
+    validTxn = {
       value: 94,
-      commitments: [
-        "read a book a month",
-        "go to the gym",
-        "eat some fruit",
+      my_commitments: [
+        COMMITMENTS.map((commitment) => web3.utils.asciiToHex(commitment)),
       ],
-      dueDate: Date.now()
-    }
+      due_date: Date.now(),
+    };
   });
 
   describe("⭐ Contract Deployment and Initialisation", function () {
@@ -38,76 +44,50 @@ describe("My Smart Contract Tests \n", async function () {
 
     describe("Initialisation Tests", async function () {
       it("should reject promise creation if NOT ENOUGH IS STAKED", async function () {
-        const incorrectCommitments = [
+        const invalidTxn = [
           {
-            transaction: {
-              value: 94,
-              commitments: [
-                "read a book a month",
-                "go to the gym",
-                "eat some fruit",
-              ],
-            },
-            reversionMessage: "insufficient amount provided",
+            ...validTxn,
+            value: 0,
           },
           {
-            transaction: {
-              value: 9400000,
-              commitments: [],
-            },
-            reversionMessage: "provide 3 commitments only",
-          },
-          {
-            transaction: {
-              value: 9400000,
-              commitments: [
-                "read a book a month",
-                "go to the gym",
-                "eat some fruit",
-                "read a book a month",
-                "go to the gym",
-                "eat some fruit",
-              ],
-            },
-            reversionMessage: "provide 3 commitments only",
+            ...validTxn,
+            value: 2000,
           },
         ];
 
-        incorrectCommitments.forEach(async function ({
-          transaction,
-          reversionMessage,
-        }) {
+        invalidTxn.forEach(async function (txn) {
+          console.log(txn);
           await expect(
-            await AccountabilityChecker.initialisePromise(transaction)
-          ).to.be.revertedWith(reversionMessage);
+            await AccountabilityChecker.activatePromise(txn)
+          ).to.be.revertedWith("insufficient amount provided");
         });
       });
 
-      it("should reject promise creation if NO/TOO MANY COMMITMENTS ARE PROVIDED", async function () {});
+      // it("should reject promise creation if NO/TOO MANY COMMITMENTS ARE PROVIDED", async function () {});
 
-      it("should reject promise creation if DUE DATE IS TOO SOON/IN THE PAST", async function () {});
+      // it("should reject promise creation if DUE DATE IS TOO SOON/IN THE PAST", async function () {});
 
-      step(
-        "should accept promise creation if all arguments are correctly provided",
-        async function () {
-          const message = {
-            value: 9400000,
-            // commitments: ["wake up at 9", "read a book", "go to gym"],
-          };
-          await expect(
-            await AccountabilityChecker.initialisePromise(message)
-          ).to.emit(AccountabilityChecker, "promiseSet");
-        }
-      );
+      // step(
+      //   "should accept promise creation if all arguments are correctly provided",
+      //   async function () {
+      //     const message = {
+      //       value: 9400000,
+      //       // commitments: ["wake up at 9", "read a book", "go to gym"],
+      //     };
+      //     await expect(
+      //       await AccountabilityChecker.activatePromise(message)
+      //     ).to.emit(AccountabilityChecker, "promiseSet");
+      //   }
+      // );
 
-      step(
-        "should prevent the owner from creating another promise if promise is active",
-        async function () {
-          await expect(
-            AccountabilityChecker.initialisePromise({ value: 9400000 })
-          ).to.be.revertedWith("promise is active");
-        }
-      );
+      // step(
+      //   "should prevent the owner from creating another promise if promise is active",
+      //   async function () {
+      //     await expect(
+      //       AccountabilityChecker.activatePromise({ value: 9400000 })
+      //     ).to.be.revertedWith("promise is active");
+      //   }
+      // );
     });
   });
 });
