@@ -1,0 +1,11 @@
+//LINK https://blog.polymath.network/solidity-tips-and-tricks-to-save-gas-and-reduce-bytecode-size-c44580b218e6
+// > Contract for dates https://github.com/pipermerriam/ethereum-datetime
+// > Use SafeMath library for operations https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol
+// NOTE default denomination of smart contract is GWEI
+//
+//CONSIDERATIONS
+// hardcode deduction amount and require min
+
+
+ // NOTE https://programtheblockchain.com/posts/2018/01/12/writing-a-contract-that-handles-time/
+    // NOTE https://www.youtube.com/watch?v=HGw-yalqdgs

@@ -1,43 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
-//LINK https://blog.polymath.network/solidity-tips-and-tricks-to-save-gas-and-reduce-bytecode-size-c44580b218e6
-// > Contract for dates https://github.com/pipermerriam/ethereum-datetime
-// > Use SafeMath library for operations https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol
-// NOTE default denomination of smart contract is GWEI
-//
-//CONSIDERATIONS
-// store promises on blockchain?
-// hardcode deduction amount and require min
-
-import "hardhat/console.sol";
-
 contract AccountabilityChecker {
-    // ANCHOR Status Variables
-    address public owner;
+    // ANCHOR  STATE VARIABLES
+    uint256 public one_day_in_seconds = 86400; //could I outsource to a different contract?
 
-    // NOTE https://ethereum.stackexchange.com/questions/43751/does-solidity-support-passing-an-array-of-strings-to-a-contracts-constructor-ye
+    address public owner;
     bytes32[] public commitments;
-    uint256 private money_pot;
-    uint256 private stake_amount = 1600000; //  ~£5  //how much is being staked per day
+    uint256 private pledge_pot;
+    uint256 private daily_wager;
+
     uint256 private reward_pot;
     uint256 private penalty_pot;
 
-    // NOTE https://programtheblockchain.com/posts/2018/01/12/writing-a-contract-that-handles-time/
-    // NOTE https://www.youtube.com/watch?v=HGw-yalqdgs
-    uint256 private promise_deadline;
-
-    bool public isPromiseActive = false; // is the promise active or not
-    uint256 public promiseLastChecked; // the last time when the promise was last checked; unix timestamp
+    bool private isPromiseActive;
+    uint256 private creation_date;
+    uint256 private deadline;
+    uint256 private last_checked;
+    uint256 private days_left;
 
     // ANCHOR EVENTS
-
     event promiseSet(
+        uint256 creation_date,
         bytes32[] commitments,
-        uint256 money_pot,
-        uint256 promise_deadline
+        uint256 pledge_pot,
+        uint256 deadline,
+        uint256 days_left
     );
-    event potTotals(uint256 money_pot, uint256 reward_pot, uint256 penalty_pot);
+    event potTotals(
+        uint256 pledge_pot,
+        uint256 reward_pot,
+        uint256 penalty_pot
+    );
     event cashOutResult(bool hasCashedOut);
 
     // ANCHOR MODIFIERS
@@ -46,13 +40,14 @@ contract AccountabilityChecker {
         _;
     }
 
-    modifier potHasEnough() {
-        require(stake_amount < money_pot, "insufficient balance");
-        _;
-    }
+    // NOTE Might no longer be relevant
+    // modifier potHasEnough() {
+    //     require(daily_wager < pledge_pot, "insufficient balance");
+    //     _;
+    // }
 
     modifier updatePromiseStatus() {
-        if (block.timestamp > promise_deadline) {
+        if (block.timestamp > deadline) {
             isPromiseActive = false;
         }
         _;
@@ -68,31 +63,51 @@ contract AccountabilityChecker {
         _;
     }
 
-    //ANCHOR CONSTRUCTOR
     constructor() {
         owner = msg.sender;
     }
 
     //ANCHOR MAIN FUNCTIONS
     // 🌟 CREATE PROMISE
-    function activatePromise(bytes32[] memory my_commitments, uint256 due_date)
-        public
-        payable
-        isOwner
-        checkPromiseIsntActive
-    {
-        require(my_commitments.length >= 3, "3 commitments only");
-        require(msg.value > stake_amount, "insufficient amount provided");
-        // TODO require(promise_deadline > "is at least 24hrs away");
+    function activatePromise(
+        bytes32[] memory my_commitments,
+        uint256 my_wager,
+        uint256 my_due_date
+    ) public payable isOwner checkPromiseIsntActive {
+        require(
+            my_commitments.length != 0 && my_commitments.length <= 3,
+            "1-3 commitments only"
+        );
+        require(my_due_date > block.timestamp, "future dates only");
+        require(
+            ((my_due_date - block.timestamp) / one_day_in_seconds) >= 1,
+            "dates > 24hrs away only"
+        );
+        require(my_wager > 0, "insufficient wager defined");
+        require(
+            msg.value >=
+                my_wager *
+                    ((my_due_date - block.timestamp) / one_day_in_seconds),
+            "insufficient pledge pot amount"
+        );
 
+        pledge_pot = msg.value;
         isPromiseActive = true;
-        for (uint256 i = 0; i < my_commitments.length; i++) {
-            commitments.push(my_commitments[i]);
-        }
-        money_pot = msg.value;
-        promise_deadline = due_date;
+        creation_date = block.timestamp;
+        deadline = my_due_date;
 
-        emit promiseSet(commitments, money_pot, promise_deadline);
+        days_left = (deadline - creation_date) / one_day_in_seconds;
+
+        daily_wager = my_wager;
+        commitments = my_commitments;
+
+        emit promiseSet(
+            creation_date,
+            commitments,
+            pledge_pot,
+            deadline,
+            days_left
+        );
     }
 
     // 🔍 CHECK PROMISE
@@ -105,14 +120,14 @@ contract AccountabilityChecker {
     //     //NOTE can only checkPromise ONCE every 24hrs.
     //     //  If 24hrs and no result is submitted automatic deduction to penalty pot.
 
-    //     money_pot -= stake_amount;
+    //     pledge_pot -= daily_wager;
     //     if (did_user_complete) {
-    //         reward_pot += stake_amount;
+    //         reward_pot += daily_wager;
     //     } else {
-    //         penalty_pot += stake_amount;
+    //         penalty_pot += daily_wager;
     //     }
 
-    //     emit potTotals(money_pot, reward_pot, penalty_pot);
+    //     emit potTotals(pledge_pot, reward_pot, penalty_pot);
     // }
 
     // 🤑 CASHOUT REWARD
@@ -121,10 +136,10 @@ contract AccountabilityChecker {
     //     //NOTE can only cash out once deadline has passed OR inffucient funds
     //     // correct transfer amount
 
-    //     uint256 payout = reward_pot + money_pot;
+    //     uint256 payout = reward_pot + pledge_pot;
     //     isPromiseActive = false;
     //     reward_pot = 0;
-    //     money_pot = 0;
+    //     pledge_pot = 0;
     //     penalty_pot = 0; //just destroy it for simplicity's sake
     //     (bool sent, ) = owner.call{value: payout}("");
     //     emit cashOutResult(sent);
@@ -134,11 +149,11 @@ contract AccountabilityChecker {
 
     // //TODO fix this return function
     // function showStats() public view returns () {
-    //     money_pot;
-    //     stake_amount;
+    //     pledge_pot;
+    //     daily_wager;
     //     reward_pot;
     //     penalty_pot;
-    //     promise_deadline;
+    //     deadline;
     //     isPromiseActive;
     // }
 
@@ -151,14 +166,14 @@ contract AccountabilityChecker {
     //     //NOTE can only checkPromise ONCE every 24hrs.
     //     //  If 24hrs and no result is submitted automatic deduction to penalty pot.
 
-    //     money_pot -= stake_amount;
+    //     pledge_pot -= daily_wager;
     //     if (did_user_complete) {
-    //         reward_pot += stake_amount;
+    //         reward_pot += daily_wager;
     //     } else {
-    //         penalty_pot += stake_amount;
+    //         penalty_pot += daily_wager;
     //     }
 
-    //     emit potTotals(money_pot, reward_pot, penalty_pot);
+    //     emit potTotals(pledge_pot, reward_pot, penalty_pot);
     // }
 
     receive() external payable {}
