@@ -9,3 +9,9 @@
 
  // NOTE https://programtheblockchain.com/posts/2018/01/12/writing-a-contract-that-handles-time/
     // NOTE https://www.youtube.com/watch?v=HGw-yalqdgs
+
+//NOTE
+use var calendar = require("dayjs/plugin/calendar"); to display date
+
+TODO
+-- Use SmartMath
