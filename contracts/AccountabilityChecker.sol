@@ -1,47 +1,61 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
+//REVIEW maybe difference between block timestamp and transaction send time to account for delay
+
 contract AccountabilityChecker {
     // SECTION  STATE VARIABLES
-    uint256 public one_day_in_seconds = 86400; //could I outsource to a different contract?
+    address private owner;
 
-    address public owner;
-    bytes32[] private commitments;
+    bytes32[] private commitments = new bytes32[](3);
     uint256 private pledge_pot;
     uint256 private daily_wager;
-
     uint256 private reward_pot;
     uint256 private penalty_pot;
 
-    bool public isPromiseActive;
+    bool private isPromiseActive;
 
-    uint256 public promise_deadline;
-    uint256 public commitments_check_open;
-    uint256 public commitments_check_deadline;
-    uint256 private commitments_last_checked;
+    uint256 private promise_deadline;
+    uint256 private check_open;
+    uint256 private check_closed;
+    uint256 private last_checked;
     uint256 private checks_left;
+
+    bool[] private checks_record; // assign size based on checks?
 
     // SECTION EVENTS
     event promiseSet(
         bytes32[] commitments,
         uint256 pledge_pot,
         uint256 promise_deadline,
+        uint256 check_open,
+        uint256 check_closed,
         uint256 checks_left
     );
 
-    event commitmentsChecked(
+    event moneyPotUpdated(
         uint256 pledge_pot,
         uint256 reward_pot,
         uint256 penalty_pot,
         uint256 checks_left
     );
 
-    event commitmentTimesUpdated(
-        uint256 commitments_check_open,
-        uint256 commitments_check_deadline
+    event penaltyApplied(
+        uint256 days_missed,
+        uint256 pledge_pot,
+        uint256 penalty_pot
     );
-    // event log(uint256 given, uint256 open);
-    //event cashOutResult(bool hasCashedOut);
+
+    event checkIntervalUpdated(uint256 check_open, uint256 check_closed);
+
+    event cashOutSummary(
+        uint256 payout,
+        uint256 penalty,
+        // uint256 checks_record,
+        bool wasSent,
+        bool isPromiseActive
+    );
+    event log(uint256 one, uint256 two);
 
     // SECTION MODIFIERS
     modifier isOwner() {
@@ -58,19 +72,24 @@ contract AccountabilityChecker {
         require(!isPromiseActive, "promise is active");
         _;
     }
-    modifier commitmentNotSubmitted(uint256 time_given) {
-        require(
-            time_given > commitments_last_checked &&
-                time_given >= commitments_check_open,
-            "already submitted"
-        );
+
+    modifier promiseExpired() {
+        require(block.timestamp >= promise_deadline, "promise not expired");
         _;
     }
 
     modifier promiseNotExpired() {
         require(
-            checks_left != 0 && !(block.timestamp >= promise_deadline),
+            (block.timestamp < promise_deadline),
             "promise expired; cashout now"
+        );
+        _;
+    }
+
+    modifier commitmentNotSubmitted(uint256 time_given) {
+        require(
+            time_given > last_checked && time_given >= check_open,
+            "already submitted"
         );
         _;
     }
@@ -84,36 +103,51 @@ contract AccountabilityChecker {
     function activatePromise(
         bytes32[] memory my_commitments,
         uint256 my_wager,
-        uint256 my_due_date
+        uint256 commitment_checks,
+        uint256 my_deadline
     ) public payable isOwner promiseNotActive {
         require(
             my_commitments.length != 0 && my_commitments.length <= 3,
             "1-3 commitments only"
         );
-        require(my_due_date > block.timestamp, "future dates only");
         require(
-            ((my_due_date - block.timestamp) / one_day_in_seconds) >= 1,
-            "dates >24hrs away only"
+            my_deadline > block.timestamp &&
+                my_deadline - block.timestamp >= 2 days,
+            "deadline >1 day away only"
         );
-        //TODO should prevent time being more than 30 days
+        require(
+            ((my_deadline - block.timestamp) / 1 days) < 29,
+            "deadline <30 days away only"
+        );
+        uint256 calculated_deadline = block.timestamp +
+            (commitment_checks * 1 days);
+        require(
+            calculated_deadline < my_deadline &&
+                ((my_deadline - calculated_deadline) <= 1 days),
+            "incorrect # of checks"
+        );
         require(my_wager > 0, "insufficient wager");
         require(
-            msg.value >=
-                my_wager *
-                    (((my_due_date - block.timestamp) / one_day_in_seconds)),
+            msg.value >= my_wager * commitment_checks,
             "insufficient pledge amount"
         );
-
         pledge_pot = msg.value;
         isPromiseActive = true;
-        promise_deadline = my_due_date;
+        promise_deadline = my_deadline;
 
-        checks_left = (promise_deadline - block.timestamp) / one_day_in_seconds;
+        checks_left = commitment_checks;
         daily_wager = my_wager;
         commitments = my_commitments;
 
-        updateCommitmentCheckTimes(block.timestamp);
-        emit promiseSet(commitments, pledge_pot, promise_deadline, checks_left);
+        updateCheckInterval(block.timestamp);
+        emit promiseSet(
+            commitments,
+            pledge_pot,
+            promise_deadline,
+            check_open,
+            check_closed,
+            checks_left
+        );
     }
 
     // 🔍 CHECK PROMISE
@@ -124,61 +158,98 @@ contract AccountabilityChecker {
         commitmentNotSubmitted(time_submitted)
         promiseNotExpired
     {
-        if (time_submitted < commitments_check_deadline) {
-            pledge_pot -= daily_wager;
-            commitments_fulfiled == true
-                ? reward_pot += daily_wager
-                : penalty_pot += daily_wager;
+        uint256 new_time;
+        if (time_submitted >= check_open && time_submitted < check_closed) {
+            updateMoneyPots(commitments_fulfiled);
+            new_time = check_open + 1 days;
         } else {
-            revert("uhoh penalty time");
+            uint256 missed_days = (time_submitted - check_closed) / 1 days;
+            emit log(time_submitted - check_closed, 1 days);
+            if (missed_days > 0) applyPenalty(missed_days);
+
+            updateMoneyPots(commitments_fulfiled);
+            new_time = check_open + 1 days + (1 days * missed_days);
         }
-
-        commitments_last_checked = block.timestamp;
-        checks_left -= 1;
-        updateCommitmentCheckTimes(commitments_check_open + one_day_in_seconds);
-
-        emit commitmentsChecked(
-            pledge_pot,
-            reward_pot,
-            penalty_pot,
-            checks_left
-        );
+        updateCheckInterval(new_time);
     }
 
     // 🤑 CASHOUT REWARD
+    function cashOut() public payable isOwner promiseActive promiseExpired {
+        if (checks_left != 0) applyPenalty(checks_left);
+        uint256 payout = reward_pot + pledge_pot;
+        uint256 penalty = penalty_pot;
 
-    // function cashOutReward() public payable isOwner {
-    //     //NOTE can only cash out once promise_deadline has passed OR inffucient funds
-    //     // correct transfer amount
+        reward_pot = 0;
+        pledge_pot = 0;
+        penalty_pot = 0;
+        isPromiseActive = false;
 
-    //     uint256 payout = reward_pot + pledge_pot;
-    //     isPromiseActive = false;
-    //     reward_pot = 0;
-    //     pledge_pot = 0;
-    //     penalty_pot = 0; //just destroy it for simplicity's sake
-    //     (bool sent, ) = owner.call{value: payout}("");
-    //     emit cashOutResult(sent);
-    // }
+        (bool sent, ) = owner.call{value: payout}("");
+        // send to sink contract
 
-    //SECTION UTIL FUNCTIONS (move this to a library)
+        emit cashOutSummary(payout, penalty, sent, isPromiseActive);
+    }
 
-    function updateCommitmentCheckTimes(uint256 new_time) internal {
-        commitments_check_open = new_time;
-        commitments_check_deadline =
-            commitments_check_open +
-            one_day_in_seconds;
+    //SECTION UTIL FUNCTIONS (move this to a library?)
+    function updateCheckInterval(uint256 new_time) internal {
+        check_open = new_time;
+        check_closed = check_open + 1 days;
 
-        emit commitmentTimesUpdated(
-            commitments_check_open,
-            commitments_check_deadline
+        emit checkIntervalUpdated(check_open, check_closed);
+    }
+    function updateMoneyPots(bool result) internal {
+        pledge_pot -= daily_wager;
+        result == true ? reward_pot += daily_wager : penalty_pot += daily_wager;
+        checks_left -= 1;
+        last_checked = block.timestamp;
+        checks_record.push(result);
+
+        emit moneyPotUpdated(pledge_pot, reward_pot, penalty_pot, checks_left);
+    }
+
+    function applyPenalty(uint256 missed_days) internal {
+        uint256 penalty_amount = missed_days * daily_wager;
+        pledge_pot -= penalty_amount;
+        penalty_pot += penalty_amount;
+        checks_left -= missed_days;
+        checks_record.push();
+
+        emit penaltyApplied(missed_days, pledge_pot, penalty_pot);
+    }
+
+    function getPromiseDetails()
+        public
+        view
+        isOwner
+        returns (
+            bytes32[] memory,
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            bool
+        )
+    {
+        return (
+            commitments,
+            check_open,
+            check_closed,
+            checks_left,
+            promise_deadline,
+            isPromiseActive
         );
     }
-    // function showStats() public view returns () {
-    //     pledge_pot;
-    //     daily_wager;
-    //     reward_pot;
-    //     penalty_pot;
-    //     promise_deadline;
-    //     isPromiseActive;
-    // }
+
+    function getPotsDetails()
+        public
+        view
+        isOwner
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (pledge_pot, reward_pot, penalty_pot);
+    }
 }

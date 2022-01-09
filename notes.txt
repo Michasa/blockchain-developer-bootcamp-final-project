@@ -15,3 +15,10 @@ use var calendar = require("dayjs/plugin/calendar"); to display date
 
 TODO
 -- Use SmartMath
+-- Have Sink Contract to recieve penalty pot amounts
+-- call the stats function see https://blog.8bitzen.com/posts/11-03-2019-truffle-how-to-test-a-none-view-function-that-returns/
+
+
+// REVIEW will transaction to chain delays break my comparisons??
+
+5️⃣ Use "assert" and get built-in formal verification with SMTChecker
