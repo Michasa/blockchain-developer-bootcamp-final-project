@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
-
-//REVIEW maybe difference between block timestamp and transaction send time to account for delay
+import "./PenaltyBank.sol";
 
 contract AccountabilityChecker {
     // SECTION  STATE VARIABLES
     address private owner;
+    PenaltyBank private _PenaltyBank;
+    address private nominated_account;
 
-    bytes32[] private commitments = new bytes32[](3);
+    bytes32[] private commitments;
     uint256 private pledge_pot;
     uint256 private daily_wager;
     uint256 private reward_pot;
@@ -21,9 +22,10 @@ contract AccountabilityChecker {
     uint256 private last_checked;
     uint256 private checks_left;
 
-    bool[] private checks_record; // assign size based on checks?
-
     // SECTION EVENTS
+    event penaltyBankCreated(address penalty_bank_address);
+    event nomineeSent(address nominee_address);
+
     event promiseSet(
         bytes32[] commitments,
         uint256 pledge_pot,
@@ -36,7 +38,12 @@ contract AccountabilityChecker {
     event moneyPotUpdated(
         uint256 pledge_pot,
         uint256 reward_pot,
-        uint256 penalty_pot,
+        uint256 penalty_pot
+    );
+
+    event checkIntervalUpdated(
+        uint256 check_open,
+        uint256 check_closed,
         uint256 checks_left
     );
 
@@ -46,16 +53,15 @@ contract AccountabilityChecker {
         uint256 penalty_pot
     );
 
-    event checkIntervalUpdated(uint256 check_open, uint256 check_closed);
-
     event cashOutSummary(
         uint256 payout,
         uint256 penalty,
-        // uint256 checks_record,
-        bool wasSent,
+        bool sentToOwner,
+        bool sentToPenaltyBank,
         bool isPromiseActive
     );
-    event log(uint256 one, uint256 two);
+
+    // event log(address one);
 
     // SECTION MODIFIERS
     modifier isOwner() {
@@ -96,16 +102,43 @@ contract AccountabilityChecker {
 
     constructor() {
         owner = msg.sender;
+        createPenaltyBank();
     }
 
     //SECTION MAIN FUNCTIONS
     // 🌟 CREATE PROMISE
+    function createPenaltyBank() internal isOwner {
+        _PenaltyBank = new PenaltyBank(address(this));
+
+        assert(address(_PenaltyBank) != address(0));
+        emit penaltyBankCreated(address(_PenaltyBank));
+    }
+
+    function setNomineeAccount(address nominee)
+        public
+        isOwner
+        promiseNotActive
+    {
+        require(nominee != owner, "cant nominate contract owner");
+        require(nominee != address(this), "cant nominate this contract");
+        require(
+            nominee != address(_PenaltyBank),
+            "cant nominate penalty contract"
+        );
+
+        nominated_account = nominee;
+        _PenaltyBank.setPaymentNominee(nominated_account);
+
+        emit nomineeSent(nominated_account);
+    }
+
     function activatePromise(
         bytes32[] memory my_commitments,
         uint256 my_wager,
         uint256 commitment_checks,
         uint256 my_deadline
     ) public payable isOwner promiseNotActive {
+        require(nominated_account != address(0), "nominee account required");
         require(
             my_commitments.length != 0 && my_commitments.length <= 3,
             "1-3 commitments only"
@@ -160,51 +193,64 @@ contract AccountabilityChecker {
     {
         uint256 new_time;
         if (time_submitted >= check_open && time_submitted < check_closed) {
-            updateMoneyPots(commitments_fulfiled);
             new_time = check_open + 1 days;
         } else {
             uint256 missed_days = (time_submitted - check_closed) / 1 days;
-            emit log(time_submitted - check_closed, 1 days);
             if (missed_days > 0) applyPenalty(missed_days);
-
-            updateMoneyPots(commitments_fulfiled);
             new_time = check_open + 1 days + (1 days * missed_days);
         }
+        updateMoneyPots(commitments_fulfiled);
         updateCheckInterval(new_time);
     }
 
     // 🤑 CASHOUT REWARD
     function cashOut() public payable isOwner promiseActive promiseExpired {
         if (checks_left != 0) applyPenalty(checks_left);
-        uint256 payout = reward_pot + pledge_pot;
-        uint256 penalty = penalty_pot;
 
+        uint256 payout = reward_pot + pledge_pot;
         reward_pot = 0;
         pledge_pot = 0;
+
+        uint256 penalty = penalty_pot;
         penalty_pot = 0;
+
         isPromiseActive = false;
+        bool sentPayout;
+        bool sentPenalty;
 
-        (bool sent, ) = owner.call{value: payout}("");
-        // send to sink contract
+        if (payout > 0) (sentPayout, ) = owner.call{value: payout}("");
 
-        emit cashOutSummary(payout, penalty, sent, isPromiseActive);
+        if (penalty > 0)
+            (sentPenalty, ) = payable(address(_PenaltyBank)).call{
+                value: penalty
+            }("");
+
+        emit cashOutSummary(
+            payout,
+            penalty,
+            sentPayout,
+            sentPenalty,
+            isPromiseActive
+        );
     }
 
-    //SECTION UTIL FUNCTIONS (move this to a library?)
+    //REVIEW which does the variable check belong to? don't update check interval if 0 checks left
+
+    //SECTION UTIL FUNCTIONS (move this to a library? YES)
     function updateCheckInterval(uint256 new_time) internal {
         check_open = new_time;
         check_closed = check_open + 1 days;
 
-        emit checkIntervalUpdated(check_open, check_closed);
+        emit checkIntervalUpdated(check_open, check_closed, checks_left);
     }
+
     function updateMoneyPots(bool result) internal {
         pledge_pot -= daily_wager;
         result == true ? reward_pot += daily_wager : penalty_pot += daily_wager;
         checks_left -= 1;
         last_checked = block.timestamp;
-        checks_record.push(result);
 
-        emit moneyPotUpdated(pledge_pot, reward_pot, penalty_pot, checks_left);
+        emit moneyPotUpdated(pledge_pot, reward_pot, penalty_pot);
     }
 
     function applyPenalty(uint256 missed_days) internal {
@@ -212,7 +258,6 @@ contract AccountabilityChecker {
         pledge_pot -= penalty_amount;
         penalty_pot += penalty_amount;
         checks_left -= missed_days;
-        checks_record.push();
 
         emit penaltyApplied(missed_days, pledge_pot, penalty_pot);
     }
@@ -238,6 +283,15 @@ contract AccountabilityChecker {
             promise_deadline,
             isPromiseActive
         );
+    }
+
+    function getPenaltyPaymentDetails()
+        public
+        view
+        isOwner
+        returns (address, address)
+    {
+        return (nominated_account, address(_PenaltyBank));
     }
 
     function getPotsDetails()

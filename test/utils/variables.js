@@ -10,6 +10,7 @@ const TIME_NOW = dayjs().unix();
 const DEADLINE = dayjs.unix(TIME_NOW).add(7, "day").unix();
 const CHECKS = dayjs.unix(DEADLINE).diff(dayjs.unix(TIME_NOW), "days") - 1;
 const DAY_IN_SECONDS = time.duration.days(1).toNumber();
+let NOW_PLUS_15_MIN = dayjs.unix(TIME_NOW).add(15, "minutes").unix();
 const DAILY_WAGER = new BN(1600000); //WEI, and is approx £5
 
 // BAD VARIABLES
@@ -35,4 +36,5 @@ module.exports = {
   TOO_SOON_DEADLINE,
   TOO_FAR_DEADLINE,
   DAY_IN_SECONDS,
+  NOW_PLUS_15_MIN,
 };

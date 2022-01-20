@@ -1,9 +1,8 @@
 const { expect } = require("chai");
 const truffleAssert = require("truffle-assertions");
 const { BN, time } = require("@openzeppelin/test-helpers");
-const dayjs = require("dayjs");
-var isTomorrow = require("dayjs/plugin/isTomorrow");
-dayjs.extend(isTomorrow);
+
+const AccountabilityContract = artifacts.require("AccountabilityChecker");
 
 const {
   COMMITMENTS,
@@ -17,20 +16,22 @@ const {
   DAY_IN_SECONDS,
   TOO_FAR_DEADLINE,
 } = require("./utils/variables");
-
 const {
   returnPledgeAmount,
   returnHexArray,
   returnUTF8Array,
 } = require("./utils/functions");
+
+let AccountabilityChecker;
 const CORRECT_PLEDGE_AMOUNT = returnPledgeAmount(CHECKS, DAILY_WAGER);
 
-const Contract = artifacts.require("AccountabilityChecker");
-
 contract("🛳️ Promise Activation", function (accounts) {
-  const [owner, notOwner] = accounts;
+  const [owner, notOwner, nominatedAccount] = accounts;
+
   beforeEach(async function () {
-    AccountabilityChecker = await Contract.new();
+    AccountabilityChecker = await AccountabilityContract.new();
+
+    await AccountabilityChecker.setNomineeAccount(nominatedAccount);
   });
 
   it("promise creation should REVERT if NOTHING is provided FOR the PLEDGE POT", async function () {
