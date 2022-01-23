@@ -24,19 +24,8 @@ const returnUTF8Array = (array) => {
   });
 };
 
-let simulateTimePass = async function (blocktime, usertime) {
-  return async function (days_passed) {
-    return (
-      (z = 2),
-      (usertime += DAY_IN_SECONDS * days_passed),
-      await blocktime.increase(blocktime.duration.days(days_passed))
-    );
-  };
-};
-
 module.exports = {
   returnPledgeAmount,
   returnHexArray,
   returnUTF8Array,
-  simulateTimePass,
 };
