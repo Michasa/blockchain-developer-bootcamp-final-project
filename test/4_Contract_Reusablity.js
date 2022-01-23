@@ -31,7 +31,7 @@ let BLOCKCHAIN_SNAPSHOT;
 
 let PROMISE_DURATION_IN_DAYS;
 
-let simulateTimePass;
+let simulateDayPass;
 
 contract("⏪ Contract Repeatability", function async(accounts) {
   const [
@@ -83,9 +83,9 @@ contract("⏪ Contract Repeatability", function async(accounts) {
 
       .diff(dayjs.unix(TIME_NOW), "days");
 
-    simulateTimePass = async (days) => {
+    simulateDayPass = async (days) => {
       return (
-        (user_time_submitted += DAY_IN_SECONDS),
+        (user_time_submitted += days * DAY_IN_SECONDS),
         await time.increase(time.duration.days(days))
       );
     };
@@ -103,12 +103,34 @@ contract("⏪ Contract Repeatability", function async(accounts) {
         if (!result) return done(new Error("No result returned"));
       }
 
-      await simulateTimePass(1);
+      await simulateDayPass(1);
     }
   });
 
   afterEach(async function () {
     await BLOCKCHAIN_SNAPSHOT.restore();
+  });
+
+  it("should allow user to still cash out long period after deadline (30 days)", async function () {
+    simulateDayPass(30);
+
+    let results = await AccountabilityChecker.cashOut({
+      from: contractOwner,
+    });
+
+    truffleAssert.eventEmitted(
+      results,
+      "cashOutSummary",
+      ({ payout, penalty, sentToOwner, sentToNominee, isPromiseActive }) => {
+        return (
+          payout.toNumber() === DAILY_WAGER * SIX_CHECKS &&
+          penalty.toNumber() === 0 &&
+          sentToOwner === true &&
+          sentToNominee === false &&
+          isPromiseActive === false
+        );
+      }
+    );
   });
 
   it("should prevent non-owner from cashing out after promise expires", async function () {

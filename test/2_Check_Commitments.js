@@ -28,7 +28,7 @@ let BLOCKCHAIN_SNAPSHOT;
 
 let PROMISE_DURATION_IN_DAYS;
 
-let simulateTimePass;
+let simulateDayPass;
 
 contract("✅ Checking Commitments", function async(accounts) {
   const [
@@ -106,6 +106,16 @@ contract("✅ Checking Commitments", function async(accounts) {
         );
       }
     );
+    truffleAssert.eventEmitted(
+      result,
+      "submissionAccepted",
+      async ({ checks_left, last_checked }) => {
+        return (
+          checks_left.toNumber() === SIX_CHECKS - 1 &&
+          last_checked.toNumber() === (await time.latest()).toNumber()
+        );
+      }
+    );
     truffleAssert.eventEmitted(result, "checkTimesUpdated");
   });
 
@@ -115,6 +125,7 @@ contract("✅ Checking Commitments", function async(accounts) {
       NOW_PLUS_15_MIN,
       { from: contractOwner }
     );
+
     truffleAssert.eventEmitted(
       result,
       "moneyPotUpdated",
@@ -124,6 +135,16 @@ contract("✅ Checking Commitments", function async(accounts) {
           penalty_pot.toNumber() === DAILY_WAGER.toNumber() &&
           pledge_pot.toNumber() ===
             returnPledgeAmount(SIX_CHECKS, DAILY_WAGER) - DAILY_WAGER
+        );
+      }
+    );
+    truffleAssert.eventEmitted(
+      result,
+      "submissionAccepted",
+      async ({ checks_left, last_checked }) => {
+        return (
+          checks_left.toNumber() === SIX_CHECKS - 1 &&
+          last_checked.toNumber() === (await time.latest()).toNumber()
         );
       }
     );
@@ -222,9 +243,9 @@ contract(
 
         .diff(dayjs.unix(TIME_NOW), "days");
 
-      simulateTimePass = async (days) => {
+      simulateDayPass = async (days) => {
         return (
-          (user_time_submitted += DAY_IN_SECONDS),
+          (user_time_submitted += days * DAY_IN_SECONDS),
           await time.increase(time.duration.days(days))
         );
       };
@@ -269,7 +290,7 @@ contract(
 
         expect(checks_left.toNumber()).to.equal(SIX_CHECKS - day);
 
-        await simulateTimePass(1);
+        await simulateDayPass(1);
       }
     });
 
@@ -305,37 +326,33 @@ contract(
           });
         expect(checks_left.toNumber()).to.equal(SIX_CHECKS - day);
 
-        await simulateTimePass(1);
+        await simulateDayPass(1);
       }
     });
 
     it("should apply penalty for missed checks(4) on next submission", async function () {
-      for (let day = 1; day < PROMISE_DURATION_IN_DAYS; day++) {
-        await simulateTimePass(1);
+      await simulateDayPass(5);
 
-        if (day == 5) {
-          let result = await AccountabilityChecker.checkCommitments(
-            true,
-            user_time_submitted,
-            { from: contractOwner }
-          );
+      let results = await AccountabilityChecker.checkCommitments(
+        true,
+        user_time_submitted,
+        { from: contractOwner }
+      );
 
-          truffleAssert.eventEmitted(
-            result,
-            "penaltyApplied",
-            ({ days_missed, penalty_amount }) => {
-              return (
-                days_missed.toNumber() === 4 &&
-                penalty_amount.toNumber() === DAILY_WAGER * 4
-              );
-            }
+      truffleAssert.eventEmitted(
+        results,
+        "penaltyApplied",
+        ({ days_missed, penalty_amount }) => {
+          return (
+            days_missed.toNumber() === 4 &&
+            penalty_amount.toNumber() === DAILY_WAGER * 4
           );
         }
-      }
+      );
     });
 
     it("should revert submission if deadline has passed", async function () {
-      await simulateTimePass(PROMISE_DURATION_IN_DAYS);
+      await simulateDayPass(PROMISE_DURATION_IN_DAYS);
 
       await truffleAssert.reverts(
         AccountabilityChecker.checkCommitments(true, user_time_submitted, {

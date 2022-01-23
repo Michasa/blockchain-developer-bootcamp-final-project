@@ -27,7 +27,7 @@ let BLOCKCHAIN_SNAPSHOT;
 
 let PROMISE_DURATION_IN_DAYS;
 
-let simulateTimePass;
+let simulateDayPass;
 
 contract("💰🤑 Cash Out Promise", function (accounts) {
   const [
@@ -77,9 +77,9 @@ contract("💰🤑 Cash Out Promise", function (accounts) {
 
       .diff(dayjs.unix(TIME_NOW), "days");
 
-    simulateTimePass = async (days) => {
+    simulateDayPass = async (days) => {
       return (
-        (user_time_submitted += DAY_IN_SECONDS),
+        (user_time_submitted += days * DAY_IN_SECONDS),
         await time.increase(time.duration.days(days))
       );
     };
@@ -109,7 +109,7 @@ contract("💰🤑 Cash Out Promise", function (accounts) {
         if (!result) return done(new Error("No result returned"));
       }
 
-      await simulateTimePass(1);
+      await simulateDayPass(1);
     }
 
     let result = await AccountabilityChecker.cashOut({
@@ -136,7 +136,7 @@ contract("💰🤑 Cash Out Promise", function (accounts) {
   });
 
   it("should apply penalty for missed days before cashout and send amount to nominee", async function () {
-    await simulateTimePass(PROMISE_DURATION_IN_DAYS);
+    await simulateDayPass(PROMISE_DURATION_IN_DAYS);
     let result = await AccountabilityChecker.cashOut({
       from: contractOwner,
     });
