@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.24 <0.7.0;
-
-import "@openzeppelin/contracts/proxy/Clones.sol";
+pragma solidity ^0.8.0;
+import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "./AccountabilityChecker.sol";
 
 contract AccountabilityCheckerFactory {
@@ -12,13 +11,15 @@ contract AccountabilityCheckerFactory {
 
     event newContractCreated(address contract_address);
 
-    constructor(address deployed_contract) public {
+    constructor(address deployed_contract) {
         accountability_checker_contract = deployed_contract;
         owner = msg.sender;
     }
 
     function createContract() external {
-        address cloneContract = Clones.clone(accountability_checker_contract);
+        address cloneContract = ClonesUpgradeable.clone(
+            accountability_checker_contract
+        );
         AccountabilityChecker(cloneContract).initialize(msg.sender);
 
         (user_deployed_contracts[msg.sender]).push(cloneContract);
