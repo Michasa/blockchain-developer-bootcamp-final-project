@@ -2,14 +2,19 @@ const { expect } = require("chai");
 const truffleAssert = require("truffle-assertions");
 const { BN, time } = require("@openzeppelin/test-helpers");
 
-const AccountabilityContract = artifacts.require("AccountabilityChecker");
+const AccountabilityCheckerFactoryContract = artifacts.require(
+  "AccountabilityCheckerFactory"
+);
+const AccountabilityCheckerContract = artifacts.require(
+  "AccountabilityChecker"
+);
 
 const {
   COMMITMENTS,
   DAILY_WAGER,
-  DEADLINE,
+  DEADLINE_SEVEN_DAYS_AWAY,
   TIME_NOW,
-  CHECKS,
+  SIX_CHECKS,
   PASSED_DEADLINE,
   TOO_MANY_COMMITMENTS,
   TOO_SOON_DEADLINE,
@@ -22,38 +27,63 @@ const {
   returnUTF8Array,
 } = require("./utils/functions");
 
-let AccountabilityChecker;
-const CORRECT_PLEDGE_AMOUNT = returnPledgeAmount(CHECKS, DAILY_WAGER);
+let AccountabilityCheckerFactory, AccountabilityChecker;
+const CORRECT_PLEDGE_AMOUNT = returnPledgeAmount(SIX_CHECKS, DAILY_WAGER);
 
 contract("🛳️ Promise Activation", function (accounts) {
-  const [owner, notOwner, nominatedAccount] = accounts;
+  const [
+    factoryOwner,
+    contractOwner,
+    notContractOwner,
+    nominatedAccount,
+    nominatedAccount2,
+  ] = accounts;
 
   beforeEach(async function () {
-    AccountabilityChecker = await AccountabilityContract.new();
+    AccountabilityCheckerFactory =
+      await AccountabilityCheckerFactoryContract.deployed({
+        from: factoryOwner,
+      });
 
-    await AccountabilityChecker.setNomineeAccount(nominatedAccount);
+    let contract_address = (
+      await AccountabilityCheckerFactory.createContract({
+        from: contractOwner,
+      })
+    ).logs[0].args.contract_address;
+
+    AccountabilityChecker = await AccountabilityCheckerContract.at(
+      contract_address
+    );
+
+    await AccountabilityChecker.setNominee(nominatedAccount, {
+      from: contractOwner,
+    });
   });
 
-  it("promise creation should REVERT if NOTHING is provided FOR the PLEDGE POT", async function () {
+  it("promise creation should revert if nothing is provided for the pledge pot", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        CHECKS,
-        DEADLINE
+        SIX_CHECKS,
+        DEADLINE_SEVEN_DAYS_AWAY,
+        {
+          from: contractOwner,
+        }
       ),
       "insufficient pledge amount"
     );
   });
 
-  it("promise creation should REVERT if NOT ENOUGH is provided FOR the PLEDGE POT", async function () {
+  it("promise creation should revert if not enough is provided for the pledge pot", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        CHECKS,
-        DEADLINE,
+        SIX_CHECKS,
+        DEADLINE_SEVEN_DAYS_AWAY,
         {
+          from: contractOwner,
           value: new BN(100),
         }
       ),
@@ -61,68 +91,76 @@ contract("🛳️ Promise Activation", function (accounts) {
     );
   });
 
-  it("promise creation should REVERT if NO DAILY WAGER is defined", async function () {
+  it("promise creation should revert if no daily wager is defined", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         new BN(0),
-        CHECKS,
-        DEADLINE,
+        SIX_CHECKS,
+        DEADLINE_SEVEN_DAYS_AWAY,
         {
-          value: returnPledgeAmount(CHECKS, 0),
+          from: contractOwner,
+          value: returnPledgeAmount(SIX_CHECKS, 0),
         }
       ),
       "insufficient wager"
     );
   });
 
-  it("promise creation should REVERT if NO COMMITMENTS ARE PROVIDED", async function () {
+  it("promise creation should revert if no commitments are provided", async function () {
     await truffleAssert.reverts(
-      AccountabilityChecker.activatePromise([], DAILY_WAGER, CHECKS, DEADLINE, {
-        value: CORRECT_PLEDGE_AMOUNT,
-      }),
-      "3 commitments only"
+      AccountabilityChecker.activatePromise(
+        [],
+        DAILY_WAGER,
+        SIX_CHECKS,
+        DEADLINE_SEVEN_DAYS_AWAY,
+        {
+          from: contractOwner,
+          value: CORRECT_PLEDGE_AMOUNT,
+        }
+      ),
+      "1-3 commitments only"
     );
   });
 
-  it("promise creation should REVERT if MORE THAN 3 COMMITMENTS ARE PROVIDED", async function () {
+  it("promise creation should revert if more than 3 commitments are provided", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(TOO_MANY_COMMITMENTS),
         DAILY_WAGER,
-        CHECKS,
-        DEADLINE,
+        SIX_CHECKS,
+        DEADLINE_SEVEN_DAYS_AWAY,
         {
+          from: contractOwner,
           value: CORRECT_PLEDGE_AMOUNT,
         }
       ),
-      "3 commitments only"
+      "1-3 commitments only"
     );
   });
 
-  it("promise creation should REVERT if GIVEN DEADLINE HAS PASSED", async function () {
+  it("promise creation should revert if given deadline has passed", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        CHECKS,
+        SIX_CHECKS,
         PASSED_DEADLINE,
-        {
-          value: CORRECT_PLEDGE_AMOUNT,
-        }
+        { from: contractOwner, value: CORRECT_PLEDGE_AMOUNT }
       ),
       "deadline >1 day away only"
     );
   });
 
-  it("promise creation should REVERT if GIVEN DEADLINE IS TOO SOON", async function () {
+  it("promise creation should revert if given deadline is <24hrs away", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        CHECKS,
+        SIX_CHECKS,
         TOO_SOON_DEADLINE,
         {
+          from: contractOwner,
           value: returnPledgeAmount(TOO_SOON_DEADLINE, DAILY_WAGER),
         }
       ),
@@ -130,7 +168,7 @@ contract("🛳️ Promise Activation", function (accounts) {
     );
   });
 
-  it("promise creation should REVERT if GIVEN DEADLINE is MORE THAN 30 DAYS", async function () {
+  it("promise creation should revert if given deadline is >= 30 days", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
@@ -138,6 +176,7 @@ contract("🛳️ Promise Activation", function (accounts) {
         30,
         TOO_FAR_DEADLINE,
         {
+          from: contractOwner,
           value: returnPledgeAmount(30, DAILY_WAGER),
         }
       ),
@@ -145,29 +184,29 @@ contract("🛳️ Promise Activation", function (accounts) {
     );
   });
 
-  it("promise creation should REVERT if CALCULATED_CHECKS DON'T MATCH DEADLINE (LESS THAN)", async function () {
+  it("promise creation should revert if calculated_checks doesn't match deadline", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
         2,
-        DEADLINE,
+        DEADLINE_SEVEN_DAYS_AWAY,
         {
+          from: contractOwner,
           value: returnPledgeAmount(2, DAILY_WAGER),
         }
       ),
       "incorrect # of checks"
     );
-  });
 
-  it("promise creation should REVERT if CALCULATED_CHECKS DON'T MATCH DEADLINE (MORE THAN)", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
         7,
-        DEADLINE,
+        DEADLINE_SEVEN_DAYS_AWAY,
         {
+          from: contractOwner,
           value: returnPledgeAmount(7, DAILY_WAGER),
         }
       ),
@@ -175,41 +214,44 @@ contract("🛳️ Promise Activation", function (accounts) {
     );
   });
 
-  it("promise creation should REVERT is NOT FROM OWNER...", async function () {
+  it("promise creation should revert is not from owner", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        CHECKS,
-        DEADLINE,
-        {
-          value: CORRECT_PLEDGE_AMOUNT,
-          from: notOwner,
-        }
+        SIX_CHECKS,
+        DEADLINE_SEVEN_DAYS_AWAY,
+        { from: notContractOwner, value: CORRECT_PLEDGE_AMOUNT }
       ),
       "owner only"
     );
   });
 
-  it("should ACCEPT creation if ALL THE CORRECT VARIABLES ARE PROVIDED", async function () {
-    let result = await AccountabilityChecker.activatePromise(
+  async function callActivatePromiseFunction(contractOwner) {
+    return await AccountabilityChecker.activatePromise(
       returnHexArray(COMMITMENTS),
       DAILY_WAGER,
-      CHECKS,
-      DEADLINE,
+      SIX_CHECKS,
+      DEADLINE_SEVEN_DAYS_AWAY,
       {
+        from: contractOwner,
         value: CORRECT_PLEDGE_AMOUNT,
       }
     );
+  }
+
+  it("should accept creation if all the correct variables are provided", async function () {
+    let result = await callActivatePromiseFunction(contractOwner);
 
     truffleAssert.eventEmitted(
       result,
       "promiseSet",
-      ({ commitments, pledge_pot, promise_deadline }) => {
+      ({ commitments, pledge_pot, promise_deadline, checks_left }) => {
         return (
           expect(returnUTF8Array(commitments)).to.eql(COMMITMENTS) &&
           pledge_pot.toNumber() === CORRECT_PLEDGE_AMOUNT.toNumber() &&
-          promise_deadline.toNumber() === DEADLINE
+          promise_deadline.toNumber() === DEADLINE_SEVEN_DAYS_AWAY &&
+          checks_left.toNumber() === SIX_CHECKS
         );
       }
     );
@@ -219,7 +261,7 @@ contract("🛳️ Promise Activation", function (accounts) {
 
     truffleAssert.eventEmitted(
       result,
-      "checkIntervalUpdated",
+      "checkTimesUpdated",
       ({ check_closed, check_open }) => {
         return (
           BLOCK_TIMESTAMP === check_open.toNumber() &&
@@ -229,41 +271,29 @@ contract("🛳️ Promise Activation", function (accounts) {
     );
   });
 
-  it("should REVERT CREATION if user submits again but PROMISE IS ALREADY ACTIVE.", async function () {
-    let result = await AccountabilityChecker.activatePromise(
-      returnHexArray(COMMITMENTS),
-      DAILY_WAGER,
-      CHECKS,
-      DEADLINE,
-      {
-        value: CORRECT_PLEDGE_AMOUNT,
-      }
-    );
+  it("should revert creation if user submits again but promise is already active.", async function () {
+    let result = await callActivatePromiseFunction(contractOwner);
+
     if (!result) return done(new Error("No result returned"));
+
     await truffleAssert.reverts(
-      AccountabilityChecker.activatePromise(
-        returnHexArray(COMMITMENTS),
-        DAILY_WAGER,
-        CHECKS,
-        DEADLINE,
-        {
-          value: CORRECT_PLEDGE_AMOUNT,
-        }
-      ),
+      callActivatePromiseFunction(contractOwner),
       "promise is active"
     );
   });
 
   it("should REVERT COMMITMENT submission if PROMISE NOT ACTIVE", async function () {
     await truffleAssert.reverts(
-      AccountabilityChecker.checkCommitments(true, TIME_NOW),
+      AccountabilityChecker.checkCommitments(true, TIME_NOW, {
+        from: contractOwner,
+      }),
       "promise isnt active"
     );
   });
 
   it("should REVERT CASHOUT if PROMISE NOT ACTIVE", async function () {
     await truffleAssert.reverts(
-      AccountabilityChecker.cashOut(),
+      AccountabilityChecker.cashOut({ from: contractOwner }),
       "promise isnt active"
     );
   });

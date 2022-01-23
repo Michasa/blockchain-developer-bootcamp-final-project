@@ -24,6 +24,6 @@ TODO
 [ ] Link with web3
 [ ] Deploy front End
 
-5️⃣ Use "assert" and get built-in formal verification with SMTChecker
+5️⃣ Use "assert" and get built-in formal verification with SMTChecker, lol don't that shit is expensive https://medium.com/layerx/how-to-reduce-gas-cost-in-solidity-f2e5321e0395#ae2f
 
 // Can you use a function to send eth from one smart contract to another or do you onnly have recieve ??
