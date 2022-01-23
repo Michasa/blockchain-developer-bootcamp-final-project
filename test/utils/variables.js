@@ -7,10 +7,13 @@ dayjs.extend(duration);
 const COMMITMENTS = ["read a book", "go to the gym", "eat some fruit"];
 
 const TIME_NOW = dayjs().unix();
-const DEADLINE = dayjs.unix(TIME_NOW).add(7, "day").unix();
-const CHECKS = dayjs.unix(DEADLINE).diff(dayjs.unix(TIME_NOW), "days") - 1;
+const DEADLINE_SEVEN_DAYS_AWAY = dayjs.unix(TIME_NOW).add(7, "day").unix();
+const SIX_CHECKS =
+  dayjs.unix(DEADLINE_SEVEN_DAYS_AWAY).diff(dayjs.unix(TIME_NOW), "days") - 1;
+
 const DAY_IN_SECONDS = time.duration.days(1).toNumber();
-let NOW_PLUS_15_MIN = dayjs.unix(TIME_NOW).add(15, "minutes").unix();
+
+let NOW_PLUS_15_MIN = dayjs.unix(TIME_NOW).add(50, "minutes").unix();
 const DAILY_WAGER = new BN(1600000); //WEI, and is approx £5
 
 // BAD VARIABLES
@@ -28,9 +31,9 @@ const TOO_MANY_COMMITMENTS = [
 module.exports = {
   COMMITMENTS,
   DAILY_WAGER,
-  DEADLINE,
+  DEADLINE_SEVEN_DAYS_AWAY,
   TIME_NOW,
-  CHECKS,
+  SIX_CHECKS,
   PASSED_DEADLINE,
   TOO_MANY_COMMITMENTS,
   TOO_SOON_DEADLINE,
