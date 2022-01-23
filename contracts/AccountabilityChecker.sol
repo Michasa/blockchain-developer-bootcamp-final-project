@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.24 <0.7.0;
-import "@openzeppelin/upgrades-core/contracts/Initializable.sol";
+pragma solidity ^0.8.0;
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract AccountabilityChecker is Initializable {
     uint256 public immutable contract_creation = block.timestamp;
@@ -11,7 +11,7 @@ contract AccountabilityChecker is Initializable {
     uint256 private reward_pot;
     uint256 private penalty_pot;
 
-    uint256 private promise_deadline;
+    uint256 public promise_deadline;
     uint256 private check_open;
     uint256 private check_closed;
     uint256 private last_checked;
@@ -19,10 +19,9 @@ contract AccountabilityChecker is Initializable {
 
     address private nominee_account;
     address public owner;
-    bool private isPromiseActive;
+    bool public isPromiseActive;
 
     event nomineeSet(address nominee_address);
-
     event promiseSet(
         bytes32[] commitments,
         uint256 pledge_pot,
@@ -38,10 +37,7 @@ contract AccountabilityChecker is Initializable {
 
     event checkTimesUpdated(uint256 check_open, uint256 check_closed);
 
-    event commitmentSubmissionAccepted(
-        uint256 checks_left,
-        uint256 last_checked
-    );
+    event submissionAccepted(uint256 checks_left, uint256 last_checked);
 
     event penaltyApplied(uint256 days_missed, uint256 penalty_amount);
 
@@ -155,7 +151,6 @@ contract AccountabilityChecker is Initializable {
         promiseNotExpired
     {
         uint256 new_time;
-
         if (time_submitted >= check_open && time_submitted < check_closed) {
             new_time = check_open + 1 days;
         } else {
@@ -216,14 +211,14 @@ contract AccountabilityChecker is Initializable {
         checks_left -= 1;
         last_checked = block.timestamp;
 
-        emit commitmentSubmissionAccepted(checks_left, last_checked);
+        emit submissionAccepted(checks_left, last_checked);
     }
 
     function applyPenalty(uint256 missed_days) internal {
         uint256 penalty_amount = missed_days * daily_wager;
 
         penalty_pot += penalty_amount;
-        pledge_pot -= pledge_pot;
+        pledge_pot -= penalty_amount;
 
         checks_left -= missed_days;
 
