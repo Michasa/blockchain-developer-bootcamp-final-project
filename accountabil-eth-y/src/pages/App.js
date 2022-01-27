@@ -1,10 +1,13 @@
 // import logo from "./logo.svg";
 import "../styles/App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Layout from "./Layout";
+import Layout from "./_layout";
 import Submit from "./Submit";
 import Cashout from "./Cashout";
+import Define from "./Define";
 import Create from "./Create";
+import Start from "./Start";
+import Nominee from "./Nominee";
 
 function App() {
   return (
@@ -24,21 +27,27 @@ function App() {
     //     </a>
     //   </header>
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route path="create" element={<Create />} />
-          <Route path="submit" element={<Submit />} />
-          <Route path="cashout" element={<Cashout />} />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Start />} />{" "}
+          <Route path="/create" element={<Create />} />
+          <Route path="/my-promise">
+            <Route index element={<h1>404</h1>} />
+            <Route path="nominee" element={<Nominee />} />
+            <Route path="define" element={<Define />} />
+            <Route path="submit" element={<Submit />} />
+            <Route path="cashout" element={<Cashout />} />
+          </Route>
           <Route
             path="*"
             element={
               <main style={{ padding: "1rem" }}>
-                <p>There's nothing here!</p>
+                <p>404 not found</p>
               </main>
             }
           />
-        </Route>
-      </Routes>
+        </Routes>
+      </Layout>
     </BrowserRouter>
     // </div>
   );

@@ -3,7 +3,8 @@ import React from "react";
 function Create() {
   return (
     <div>
-      <h1> Create</h1>;
+      Click to create your and deploy your Accountabil-ETH-y Smart Contract
+      <button>Request</button>
     </div>
   );
 }
