@@ -22,6 +22,7 @@ contract AccountabilityChecker is Initializable {
     bool public isPromiseActive;
 
     event nomineeSet(address nominee_address);
+
     event promiseSet(
         bytes32[] commitments,
         uint256 pledge_pot,
@@ -110,18 +111,18 @@ contract AccountabilityChecker is Initializable {
         );
         require(
             my_deadline > block.timestamp &&
-                my_deadline - block.timestamp >= (23 hours + 59 minutes),
+                my_deadline - block.timestamp >= (23 hours + 50 minutes),
             "deadline >=1 day away only"
         );
         require(
-            ((my_deadline - block.timestamp) / (23 hours + 59 minutes)) *
+            ((my_deadline - block.timestamp) / (23 hours + 50 minutes)) *
                 1 days <=
                 30 days,
             "deadline <=30 days away only"
         );
         require(my_wager > 0, "insufficient wager");
         uint256 calculated_checks = (my_deadline - block.timestamp) /
-            (23 hours + 59 minutes);
+            (23 hours + 50 minutes);
         require(
             msg.value >= my_wager * calculated_checks,
             "insufficient pledge amount"
