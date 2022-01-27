@@ -12,9 +12,11 @@ const AccountabilityCheckerContract = artifacts.require(
 const {
   COMMITMENTS,
   DAILY_WAGER,
-  DEADLINE_SEVEN_DAYS_AWAY,
+  SEVEN_DAYS_AWAY_TIMESTAMP,
+  NUMBER_OF_CHECKS_FOR_7_DAYS,
+  ONE_DAY_AWAY_TIMESTAMP,
+  NUMBER_OF_CHECKS_FOR_1_DAYS,
   TIME_NOW,
-  SIX_CHECKS,
   PASSED_DEADLINE,
   TOO_MANY_COMMITMENTS,
   TOO_SOON_DEADLINE,
@@ -28,7 +30,10 @@ const {
 } = require("./utils/functions");
 
 let AccountabilityCheckerFactory, AccountabilityChecker;
-const CORRECT_PLEDGE_AMOUNT = returnPledgeAmount(SIX_CHECKS, DAILY_WAGER);
+const CORRECT_PLEDGE_AMOUNT = returnPledgeAmount(
+  SEVEN_DAYS_AWAY_TIMESTAMP,
+  DAILY_WAGER
+);
 
 contract("🛳️ Promise Activation", function (accounts) {
   const [
@@ -65,8 +70,7 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         {
           from: contractOwner,
         }
@@ -80,8 +84,7 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         {
           from: contractOwner,
           value: new BN(100),
@@ -96,11 +99,10 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         new BN(0),
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         {
           from: contractOwner,
-          value: returnPledgeAmount(SIX_CHECKS, 0),
+          value: returnPledgeAmount(SEVEN_DAYS_AWAY_TIMESTAMP, 0),
         }
       ),
       "insufficient wager"
@@ -112,8 +114,7 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         [],
         DAILY_WAGER,
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         {
           from: contractOwner,
           value: CORRECT_PLEDGE_AMOUNT,
@@ -128,8 +129,7 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(TOO_MANY_COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         {
           from: contractOwner,
           value: CORRECT_PLEDGE_AMOUNT,
@@ -144,11 +144,10 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
         PASSED_DEADLINE,
         { from: contractOwner, value: CORRECT_PLEDGE_AMOUNT }
       ),
-      "deadline >1 day away only"
+      "deadline >=1 day away only"
     );
   });
 
@@ -157,60 +156,28 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
         TOO_SOON_DEADLINE,
         {
           from: contractOwner,
           value: returnPledgeAmount(TOO_SOON_DEADLINE, DAILY_WAGER),
         }
       ),
-      "deadline >1 day away only"
+      "deadline >=1 day away only"
     );
   });
 
-  it("promise creation should revert if given deadline is >= 30 days", async function () {
+  it("promise creation should revert if given deadline is > 30 days", async function () {
     await truffleAssert.reverts(
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        30,
         TOO_FAR_DEADLINE,
         {
           from: contractOwner,
-          value: returnPledgeAmount(30, DAILY_WAGER),
+          value: returnPledgeAmount(TOO_FAR_DEADLINE, DAILY_WAGER),
         }
       ),
-      "deadline <30 days away only "
-    );
-  });
-
-  it("promise creation should revert if calculated_checks doesn't match deadline", async function () {
-    await truffleAssert.reverts(
-      AccountabilityChecker.activatePromise(
-        returnHexArray(COMMITMENTS),
-        DAILY_WAGER,
-        2,
-        DEADLINE_SEVEN_DAYS_AWAY,
-        {
-          from: contractOwner,
-          value: returnPledgeAmount(2, DAILY_WAGER),
-        }
-      ),
-      "incorrect # of checks"
-    );
-
-    await truffleAssert.reverts(
-      AccountabilityChecker.activatePromise(
-        returnHexArray(COMMITMENTS),
-        DAILY_WAGER,
-        7,
-        DEADLINE_SEVEN_DAYS_AWAY,
-        {
-          from: contractOwner,
-          value: returnPledgeAmount(7, DAILY_WAGER),
-        }
-      ),
-      "incorrect # of checks"
+      "deadline <=30 days away only"
     );
   });
 
@@ -219,8 +186,7 @@ contract("🛳️ Promise Activation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         { from: notContractOwner, value: CORRECT_PLEDGE_AMOUNT }
       ),
       "owner only"
@@ -231,8 +197,30 @@ contract("🛳️ Promise Activation", function (accounts) {
     return await AccountabilityChecker.activatePromise(
       returnHexArray(COMMITMENTS),
       DAILY_WAGER,
-      SIX_CHECKS,
-      DEADLINE_SEVEN_DAYS_AWAY,
+      SEVEN_DAYS_AWAY_TIMESTAMP,
+      {
+        from: contractOwner,
+        value: CORRECT_PLEDGE_AMOUNT,
+      }
+    );
+  }
+  it("promise creation should revert is not from owner", async function () {
+    await truffleAssert.reverts(
+      AccountabilityChecker.activatePromise(
+        returnHexArray(COMMITMENTS),
+        DAILY_WAGER,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
+        { from: notContractOwner, value: CORRECT_PLEDGE_AMOUNT }
+      ),
+      "owner only"
+    );
+  });
+
+  async function callActivatePromiseFunction(contractOwner) {
+    return await AccountabilityChecker.activatePromise(
+      returnHexArray(COMMITMENTS),
+      DAILY_WAGER,
+      SEVEN_DAYS_AWAY_TIMESTAMP,
       {
         from: contractOwner,
         value: CORRECT_PLEDGE_AMOUNT,
@@ -240,7 +228,49 @@ contract("🛳️ Promise Activation", function (accounts) {
     );
   }
 
-  it("should accept creation if all the correct variables are provided", async function () {
+  it("should accept creation if all the correct variables are provided (1 DAY DURATION)", async function () {
+    let result = await AccountabilityChecker.activatePromise(
+      returnHexArray(COMMITMENTS),
+      DAILY_WAGER,
+      ONE_DAY_AWAY_TIMESTAMP,
+      {
+        from: contractOwner,
+        value: returnPledgeAmount(ONE_DAY_AWAY_TIMESTAMP, DAILY_WAGER),
+      }
+    );
+    truffleAssert.eventEmitted(
+      result,
+      "promiseSet",
+      ({ commitments, pledge_pot, promise_deadline, checks_left }) => {
+        return (
+          expect(returnUTF8Array(commitments)).to.eql(COMMITMENTS) &&
+          pledge_pot.toNumber() ===
+            returnPledgeAmount(
+              ONE_DAY_AWAY_TIMESTAMP,
+              DAILY_WAGER
+            ).toNumber() &&
+          checks_left.toNumber() === NUMBER_OF_CHECKS_FOR_1_DAYS &&
+          promise_deadline.toNumber() === ONE_DAY_AWAY_TIMESTAMP
+        );
+      }
+    );
+
+    let BLOCK_TIMESTAMP = (await time.latest()).toNumber();
+    let BLOCK_TIMESTAMP_24HRS_FROM_NOW = BLOCK_TIMESTAMP + DAY_IN_SECONDS;
+
+    truffleAssert.eventEmitted(
+      result,
+      "checkTimesUpdated",
+      ({ check_closed, check_open }) => {
+        return (
+          BLOCK_TIMESTAMP === check_open.toNumber() &&
+          BLOCK_TIMESTAMP_24HRS_FROM_NOW === check_closed.toNumber()
+        );
+      }
+    );
+  });
+
+  it("should accept creation if all the correct variables are provided (7 DAY DURATION)", async function () {
     let result = await callActivatePromiseFunction(contractOwner);
 
     truffleAssert.eventEmitted(
@@ -250,8 +280,8 @@ contract("🛳️ Promise Activation", function (accounts) {
         return (
           expect(returnUTF8Array(commitments)).to.eql(COMMITMENTS) &&
           pledge_pot.toNumber() === CORRECT_PLEDGE_AMOUNT.toNumber() &&
-          promise_deadline.toNumber() === DEADLINE_SEVEN_DAYS_AWAY &&
-          checks_left.toNumber() === SIX_CHECKS
+          checks_left.toNumber() === NUMBER_OF_CHECKS_FOR_7_DAYS &&
+          promise_deadline.toNumber() === SEVEN_DAYS_AWAY_TIMESTAMP
         );
       }
     );

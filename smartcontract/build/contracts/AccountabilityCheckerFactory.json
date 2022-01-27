@@ -49,7 +49,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -62,7 +63,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -82,7 +84,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     }
   ],
   "metadata": "{\"compiler\":{\"version\":\"0.8.11+commit.d7f03943\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"deployed_contract\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"log\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"contract_address\",\"type\":\"address\"}],\"name\":\"newContractCreated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"contracts_deployed\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"createContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"findMyContracts\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/AccountabilityCheckerFactory.sol\":\"AccountabilityCheckerFactory\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol\":{\"keccak256\":\"0x45fe5b6e09537c84248325b6cb3595aed7752b07425dfe136351234f2d8130dd\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a71d1520ace64f0bbd75ff6039bb7bb71b0d66e1d153235df4266dafea7f729c\",\"dweb:/ipfs/QmQUXcrczoVskKmcwYKvYkGy2ehtwbVH58tUBqNRG7iW7H\"]},\"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\":{\"keccak256\":\"0x68861bcc80cacbd498efde75aab6c74a486cc48262660d326c8d7530d9752097\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5beb2713aca05976562500789329e8c41320d00bd68ea9247856ec73894c3e3f\",\"dweb:/ipfs/QmQKwkpofsZYAzMZs7uNL7Qq58zVBuhoZCGpD6bJdUwyqy\"]},\"@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol\":{\"keccak256\":\"0x3f0f878c796dfc7feba6d3c4e3e526c14c7deae8b7bfc71088e3f38fab0d77b3\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://69bf7d357ce97852f4fb71045919b1bb2c0ad0c820e3f06b9dd4451b2dc5a343\",\"dweb:/ipfs/QmWt96ZviufDu2qqS7Ln6UCJjfLyoFKbo6YKn54ao3o94z\"]},\"project:/contracts/AccountabilityChecker.sol\":{\"keccak256\":\"0x440693085e7aa9c0c52c743c2db32cd5386f4c3f215c88abbde7a583000f7c8b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://02e2c3ce909404f91f03db64bc955333bf26d0622024fadca037f383e4987696\",\"dweb:/ipfs/Qmd3DT4PwSWmcFc5bcQYjBkVbK9GVV835VVLRKFVnJzov6\"]},\"project:/contracts/AccountabilityCheckerFactory.sol\":{\"keccak256\":\"0xb8c44bde1104177b7eaffe6feb3e7d423ed681dc1744307a1b13def88d7f37ed\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://9799c87757d14a14096b876917052c7e584f3a53bd2f760678ceeecde3f35e51\",\"dweb:/ipfs/QmfJrShbMqDcFECAmqEF4hxi48UnLVFfDBkdXLiXaskSHs\"]}},\"version\":1}",
@@ -5044,12 +5047,13 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x95CD7D54eC2090160CcC4745Cf2445376ef9537E",
-      "transactionHash": "0xac0032e0b7a8bb416ace6456b81f395c54a0fcdc560f0cb0dc7ebb85a14c19a7"
+      "address": "0x7cE4e2f96F3ff1B21B6e3C743B12fCE3A5dF3278",
+      "transactionHash": "0x7c5411838569b008f421efcf329dbe2654302c594f6d0c0325ccaf8c86b714ef"
     }
   },
   "schemaVersion": "3.4.4",
-  "updatedAt": "2022-01-24T21:08:52.438Z",
+  "updatedAt": "2022-01-26T01:58:27.475Z",
+  "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
     "methods": {},

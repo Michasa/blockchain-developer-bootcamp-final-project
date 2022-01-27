@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^4.4.2",
+    "@truffle/hdwallet-provider": "^2.0.1",
     "dayjs": "^1.10.7",
     "web3-utils": "^1.6.1"
   }

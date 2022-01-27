@@ -12,12 +12,12 @@ contract AccountabilityChecker is Initializable {
     uint256 private penalty_pot;
 
     uint256 public promise_deadline;
-    uint256 private check_open;
-    uint256 private check_closed;
+    uint256 public check_open;
+    uint256 public check_closed;
     uint256 private last_checked;
     uint256 private checks_left;
 
-    address private nominee_account;
+    address public nominee_account;
     address public owner;
     bool public isPromiseActive;
 
@@ -101,7 +101,6 @@ contract AccountabilityChecker is Initializable {
     function activatePromise(
         bytes32[] memory my_commitments,
         uint256 my_wager,
-        uint256 commitment_checks,
         uint256 my_deadline
     ) public payable isOwner promiseNotActive {
         require(nominee_account != address(0), "nominee account required");
@@ -109,33 +108,30 @@ contract AccountabilityChecker is Initializable {
             my_commitments.length != 0 && my_commitments.length <= 3,
             "1-3 commitments only"
         );
-        require(my_wager > 0, "insufficient wager");
-        require(
-            msg.value >= my_wager * commitment_checks,
-            "insufficient pledge amount"
-        );
         require(
             my_deadline > block.timestamp &&
-                my_deadline - block.timestamp >= 2 days,
-            "deadline >1 day away only"
+                my_deadline - block.timestamp >= (23 hours + 59 minutes),
+            "deadline >=1 day away only"
         );
         require(
-            ((my_deadline - block.timestamp) / 1 days) < 29,
-            "deadline <30 days away only"
+            ((my_deadline - block.timestamp) / (23 hours + 59 minutes)) *
+                1 days <=
+                30 days,
+            "deadline <=30 days away only"
         );
-        uint256 calculated_deadline = block.timestamp +
-            (commitment_checks * 1 days);
+        require(my_wager > 0, "insufficient wager");
+        uint256 calculated_checks = (my_deadline - block.timestamp) /
+            (23 hours + 59 minutes);
         require(
-            calculated_deadline < my_deadline &&
-                ((my_deadline - calculated_deadline) <= 1 days),
-            "incorrect # of checks"
+            msg.value >= my_wager * calculated_checks,
+            "insufficient pledge amount"
         );
 
         pledge_pot = msg.value;
         isPromiseActive = true;
         promise_deadline = my_deadline;
 
-        checks_left = commitment_checks;
+        checks_left = calculated_checks;
         daily_wager = my_wager;
         commitments = my_commitments;
 

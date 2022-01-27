@@ -12,9 +12,9 @@ const AccountabilityCheckerContract = artifacts.require(
 const {
   COMMITMENTS,
   DAILY_WAGER,
-  DEADLINE_SEVEN_DAYS_AWAY,
+  SEVEN_DAYS_AWAY_TIMESTAMP,
   TIME_NOW,
-  SIX_CHECKS,
+  NUMBER_OF_CHECKS_FOR_7_DAYS,
   DAY_IN_SECONDS,
   NOW_PLUS_15_MIN,
 } = require("./utils/variables");
@@ -65,11 +65,10 @@ contract("⏪ Contract Repeatability", function async(accounts) {
     await AccountabilityChecker.activatePromise(
       returnHexArray(COMMITMENTS),
       DAILY_WAGER,
-      SIX_CHECKS,
-      DEADLINE_SEVEN_DAYS_AWAY,
+      SEVEN_DAYS_AWAY_TIMESTAMP,
       {
         from: contractOwner,
-        value: returnPledgeAmount(SIX_CHECKS, DAILY_WAGER),
+        value: returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS, DAILY_WAGER),
       }
     );
 
@@ -79,7 +78,7 @@ contract("⏪ Contract Repeatability", function async(accounts) {
   beforeEach(async function () {
     user_time_submitted = NOW_PLUS_15_MIN;
     PROMISE_DURATION_IN_DAYS = dayjs
-      .unix(DEADLINE_SEVEN_DAYS_AWAY)
+      .unix(SEVEN_DAYS_AWAY_TIMESTAMP)
 
       .diff(dayjs.unix(TIME_NOW), "days");
 
@@ -90,7 +89,7 @@ contract("⏪ Contract Repeatability", function async(accounts) {
       );
     };
 
-    for (let day = 1; day <= PROMISE_DURATION_IN_DAYS; day++) {
+    for (let day = 0; day <= PROMISE_DURATION_IN_DAYS; day++) {
       if (day < PROMISE_DURATION_IN_DAYS) {
         let result = await AccountabilityChecker.checkCommitments(
           true,
@@ -123,7 +122,7 @@ contract("⏪ Contract Repeatability", function async(accounts) {
       "cashOutSummary",
       ({ payout, penalty, sentToOwner, sentToNominee, isPromiseActive }) => {
         return (
-          payout.toNumber() === DAILY_WAGER * SIX_CHECKS &&
+          payout.toNumber() === DAILY_WAGER * NUMBER_OF_CHECKS_FOR_7_DAYS &&
           penalty.toNumber() === 0 &&
           sentToOwner === true &&
           sentToNominee === false &&
@@ -167,24 +166,22 @@ contract("⏪ Contract Repeatability", function async(accounts) {
     // mimics user submitting immediately after cashout
     user_time_submitted = (await time.latest()).toNumber();
 
-    const DEADLINE_SEVEN_DAYS_AWAY_SECOND_ATTEMPT = dayjs
+    const SEVEN_DAYS_AWAY_TIMESTAMP_2 = dayjs
       .unix(user_time_submitted)
       .add(7, "day")
       .unix();
 
-    const SIX_CHECKS_SECOND_ATTEMPT =
-      dayjs
-        .unix(DEADLINE_SEVEN_DAYS_AWAY_SECOND_ATTEMPT)
-        .diff(dayjs.unix(user_time_submitted), "days") - 1;
+    const NUMBER_OF_CHECKS_FOR_7_DAYS_2 = dayjs
+      .unix(SEVEN_DAYS_AWAY_TIMESTAMP_2)
+      .diff(dayjs.unix(user_time_submitted), "days");
 
     let result = await AccountabilityChecker.activatePromise(
       returnHexArray(["pass this test"]),
       DAILY_WAGER,
-      SIX_CHECKS_SECOND_ATTEMPT,
-      DEADLINE_SEVEN_DAYS_AWAY_SECOND_ATTEMPT,
+      SEVEN_DAYS_AWAY_TIMESTAMP_2,
       {
         from: contractOwner,
-        value: returnPledgeAmount(SIX_CHECKS_SECOND_ATTEMPT, DAILY_WAGER),
+        value: returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS_2, DAILY_WAGER),
       }
     );
 
@@ -196,12 +193,11 @@ contract("⏪ Contract Repeatability", function async(accounts) {
           expect(returnUTF8Array(commitments)).to.eql(["pass this test"]) &&
           pledge_pot.toNumber() ===
             returnPledgeAmount(
-              SIX_CHECKS_SECOND_ATTEMPT,
+              NUMBER_OF_CHECKS_FOR_7_DAYS_2,
               DAILY_WAGER
             ).toNumber() &&
-          promise_deadline.toNumber() ===
-            DEADLINE_SEVEN_DAYS_AWAY_SECOND_ATTEMPT &&
-          checks_left.toNumber() === SIX_CHECKS_SECOND_ATTEMPT
+          promise_deadline.toNumber() === SEVEN_DAYS_AWAY_TIMESTAMP_2 &&
+          checks_left.toNumber() === NUMBER_OF_CHECKS_FOR_7_DAYS_2
         );
       }
     );

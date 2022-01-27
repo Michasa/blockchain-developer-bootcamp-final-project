@@ -13,9 +13,9 @@ const AccountabilityCheckerContract = artifacts.require(
 const {
   COMMITMENTS,
   DAILY_WAGER,
-  DEADLINE_SEVEN_DAYS_AWAY,
   TIME_NOW,
-  SIX_CHECKS,
+  SEVEN_DAYS_AWAY_TIMESTAMP,
+  NUMBER_OF_CHECKS_FOR_7_DAYS,
   DAY_IN_SECONDS,
   NOW_PLUS_15_MIN,
 } = require("./utils/variables");
@@ -23,10 +23,8 @@ const {
 const { returnPledgeAmount, returnHexArray } = require("./utils/functions");
 
 let AccountabilityCheckerFactory, AccountabilityChecker;
-let user_time_submitted;
+let user_time_submitted, checks_remaining, PROMISE_DURATION_IN_DAYS;
 let BLOCKCHAIN_SNAPSHOT;
-
-let PROMISE_DURATION_IN_DAYS;
 
 let simulateDayPass;
 
@@ -62,11 +60,10 @@ contract("✅ Checking Commitments", function async(accounts) {
     await AccountabilityChecker.activatePromise(
       returnHexArray(COMMITMENTS),
       DAILY_WAGER,
-      SIX_CHECKS,
-      DEADLINE_SEVEN_DAYS_AWAY,
+      SEVEN_DAYS_AWAY_TIMESTAMP,
       {
         from: contractOwner,
-        value: returnPledgeAmount(SIX_CHECKS, DAILY_WAGER),
+        value: returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS, DAILY_WAGER),
       }
     );
   });
@@ -102,7 +99,8 @@ contract("✅ Checking Commitments", function async(accounts) {
           penalty_pot.toNumber() === 0 &&
           reward_pot.toNumber() === DAILY_WAGER.toNumber() &&
           pledge_pot.toNumber() ===
-            returnPledgeAmount(SIX_CHECKS, DAILY_WAGER) - DAILY_WAGER
+            returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS, DAILY_WAGER) -
+              DAILY_WAGER
         );
       }
     );
@@ -111,7 +109,7 @@ contract("✅ Checking Commitments", function async(accounts) {
       "submissionAccepted",
       async ({ checks_left, last_checked }) => {
         return (
-          checks_left.toNumber() === SIX_CHECKS - 1 &&
+          checks_left.toNumber() === NUMBER_OF_CHECKS_FOR_7_DAYS - 1 &&
           last_checked.toNumber() === (await time.latest()).toNumber()
         );
       }
@@ -134,7 +132,8 @@ contract("✅ Checking Commitments", function async(accounts) {
           reward_pot.toNumber() === 0 &&
           penalty_pot.toNumber() === DAILY_WAGER.toNumber() &&
           pledge_pot.toNumber() ===
-            returnPledgeAmount(SIX_CHECKS, DAILY_WAGER) - DAILY_WAGER
+            returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS, DAILY_WAGER) -
+              DAILY_WAGER
         );
       }
     );
@@ -143,7 +142,7 @@ contract("✅ Checking Commitments", function async(accounts) {
       "submissionAccepted",
       async ({ checks_left, last_checked }) => {
         return (
-          checks_left.toNumber() === SIX_CHECKS - 1 &&
+          checks_left.toNumber() === NUMBER_OF_CHECKS_FOR_7_DAYS - 1 &&
           last_checked.toNumber() === (await time.latest()).toNumber()
         );
       }
@@ -229,19 +228,19 @@ contract(
       await AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         {
           from: contractOwner,
-          value: returnPledgeAmount(SIX_CHECKS, DAILY_WAGER),
+          value: returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS, DAILY_WAGER),
         }
       );
 
       user_time_submitted = NOW_PLUS_15_MIN;
       PROMISE_DURATION_IN_DAYS = dayjs
-        .unix(DEADLINE_SEVEN_DAYS_AWAY)
+        .unix(SEVEN_DAYS_AWAY_TIMESTAMP)
 
         .diff(dayjs.unix(TIME_NOW), "days");
+      checks_remaining = NUMBER_OF_CHECKS_FOR_7_DAYS;
 
       simulateDayPass = async (days) => {
         return (
@@ -258,7 +257,7 @@ contract(
     });
 
     it("should accept submissions submitted for full promise duration (ALL PASS)", async function () {
-      for (let day = 1; day < PROMISE_DURATION_IN_DAYS; day++) {
+      for (let day = 0; day < PROMISE_DURATION_IN_DAYS; day++) {
         let result = await AccountabilityChecker.checkCommitments(
           true,
           user_time_submitted,
@@ -270,13 +269,13 @@ contract(
           result,
           "moneyPotUpdated",
           ({ penalty_pot, pledge_pot, reward_pot }) => {
-            let multiplied_wager = DAILY_WAGER.toNumber() * day;
+            let multiplied_wager = DAILY_WAGER.toNumber() * (day + 1);
             return (
-              (reward_pot.toNumber() === multiplied_wager &&
-                penalty_pot.toNumber() === 0 &&
-                pledge_pot.toNumber() ===
-                  returnPledgeAmount(SIX_CHECKS, DAILY_WAGER)) -
-              multiplied_wager
+              reward_pot.toNumber() === multiplied_wager &&
+              penalty_pot.toNumber() === 0 &&
+              pledge_pot.toNumber() ===
+                returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS, DAILY_WAGER) -
+                  multiplied_wager
             );
           }
         );
@@ -288,32 +287,32 @@ contract(
             from: contractOwner,
           });
 
-        expect(checks_left.toNumber()).to.equal(SIX_CHECKS - day);
-
+        expect(checks_left.toNumber()).to.equal(checks_remaining - 1);
+        checks_remaining--;
         await simulateDayPass(1);
       }
     });
 
     it("should accept submissions submitted at 24hr intervals for full promise duration (ALL FAILED)", async function () {
-      for (let day = 1; day < PROMISE_DURATION_IN_DAYS; day++) {
+      for (let day = 0; day < PROMISE_DURATION_IN_DAYS; day++) {
         let result = await AccountabilityChecker.checkCommitments(
           false,
           user_time_submitted,
           { from: contractOwner }
         );
-
         if (!result) return done(new Error("No result returned"));
 
         truffleAssert.eventEmitted(
           result,
           "moneyPotUpdated",
           ({ penalty_pot, pledge_pot, reward_pot }) => {
-            let multiplied_wager = DAILY_WAGER.toNumber() * day;
+            let multiplied_wager = DAILY_WAGER.toNumber() * (day + 1);
             return (
               reward_pot.toNumber() === 0 &&
               penalty_pot.toNumber() === multiplied_wager &&
               pledge_pot.toNumber() ===
-                returnPledgeAmount(SIX_CHECKS, DAILY_WAGER) - multiplied_wager
+                returnPledgeAmount(NUMBER_OF_CHECKS_FOR_7_DAYS, DAILY_WAGER) -
+                  multiplied_wager
             );
           }
         );
@@ -324,8 +323,8 @@ contract(
           await AccountabilityChecker.getPromiseDetails.call({
             from: contractOwner,
           });
-        expect(checks_left.toNumber()).to.equal(SIX_CHECKS - day);
-
+        expect(checks_left.toNumber()).to.equal(checks_remaining - 1);
+        checks_remaining--;
         await simulateDayPass(1);
       }
     });

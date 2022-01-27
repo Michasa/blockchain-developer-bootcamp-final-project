@@ -3,8 +3,7 @@ const truffleAssert = require("truffle-assertions");
 const {
   COMMITMENTS,
   DAILY_WAGER,
-  DEADLINE_SEVEN_DAYS_AWAY,
-  SIX_CHECKS,
+  SEVEN_DAYS_AWAY_TIMESTAMP,
 } = require("./utils/variables");
 const { returnPledgeAmount, returnHexArray } = require("./utils/functions");
 
@@ -141,10 +140,9 @@ contract("✨📜 AccountabilityChecker Initialisation", function (accounts) {
       AccountabilityChecker.activatePromise(
         returnHexArray(COMMITMENTS),
         DAILY_WAGER,
-        SIX_CHECKS,
-        DEADLINE_SEVEN_DAYS_AWAY,
+        SEVEN_DAYS_AWAY_TIMESTAMP,
         {
-          value: returnPledgeAmount(SIX_CHECKS, DAILY_WAGER),
+          value: returnPledgeAmount(SEVEN_DAYS_AWAY_TIMESTAMP, DAILY_WAGER),
           from: contractOwner,
         }
       ),
