@@ -6,12 +6,14 @@ function Start() {
     <div>
       What do you want to do?
       <div>
-        <Link to="create">Create</Link>
+        <Link to="/create" aria-disabled>
+          Create
+        </Link>
       </div>
       or
-      <div>Define</div>
-      <div>Submit</div>
-      <div>Cashout</div>
+      <Link to="/my-promise/define">Define</Link>
+      {/* <Link to="/my-promise/submit">Submit</Link>
+      <Link to="/my-promise/cashout">Cashout</Link> */}
     </div>
   );
 }

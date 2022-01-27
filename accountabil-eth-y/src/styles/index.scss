@@ -1,0 +1,15 @@
+header {
+  border: solid 1px red;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  .account-data {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+body {
+  margin: 0;
+}

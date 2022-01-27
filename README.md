@@ -21,7 +21,10 @@
 
 ### How to use
 
-> TESTS
-> certains tests take a longer duration because they are using loops to simulate the passing of time, and so it can look like the tests have frozen. But be rest assured that it is working.
-> It is advised to run tests files that have large time simulates separate to avoid this issue
-> e.g. $ test test/3_Promise_Cashout.js
+## TESTS
+
+Certains tests take a longer duration because they are using loops to simulate the passing of time, and so it can look like the tests have frozen. But be rest assured that they're working as intended...lol I hope.
+
+It is advised to run tests files that have large time simulates separate to avoid this issue
+
+> > e.g. $ test test/3_Promise_Cashout.js
