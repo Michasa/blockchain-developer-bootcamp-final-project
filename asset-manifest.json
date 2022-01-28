@@ -1,22 +1,22 @@
 {
   "files": {
-    "main.css": "/blockchain-developer-bootcamp-final-project/static/css/main.f213b9b8.chunk.css",
-    "main.js": "/blockchain-developer-bootcamp-final-project/static/js/main.ccbaf7d0.chunk.js",
-    "main.js.map": "/blockchain-developer-bootcamp-final-project/static/js/main.ccbaf7d0.chunk.js.map",
-    "runtime-main.js": "/blockchain-developer-bootcamp-final-project/static/js/runtime-main.259bdd62.js",
-    "runtime-main.js.map": "/blockchain-developer-bootcamp-final-project/static/js/runtime-main.259bdd62.js.map",
-    "static/js/2.3ebd6308.chunk.js": "/blockchain-developer-bootcamp-final-project/static/js/2.3ebd6308.chunk.js",
-    "static/js/2.3ebd6308.chunk.js.map": "/blockchain-developer-bootcamp-final-project/static/js/2.3ebd6308.chunk.js.map",
-    "static/js/3.fbd5b349.chunk.js": "/blockchain-developer-bootcamp-final-project/static/js/3.fbd5b349.chunk.js",
-    "static/js/3.fbd5b349.chunk.js.map": "/blockchain-developer-bootcamp-final-project/static/js/3.fbd5b349.chunk.js.map",
-    "index.html": "/blockchain-developer-bootcamp-final-project/index.html",
-    "static/css/main.f213b9b8.chunk.css.map": "/blockchain-developer-bootcamp-final-project/static/css/main.f213b9b8.chunk.css.map",
-    "static/js/2.3ebd6308.chunk.js.LICENSE.txt": "/blockchain-developer-bootcamp-final-project/static/js/2.3ebd6308.chunk.js.LICENSE.txt"
+    "main.css": "/static/css/main.f213b9b8.chunk.css",
+    "main.js": "/static/js/main.7c7f9781.chunk.js",
+    "main.js.map": "/static/js/main.7c7f9781.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.ee2bd676.js",
+    "runtime-main.js.map": "/static/js/runtime-main.ee2bd676.js.map",
+    "static/js/2.952c5503.chunk.js": "/static/js/2.952c5503.chunk.js",
+    "static/js/2.952c5503.chunk.js.map": "/static/js/2.952c5503.chunk.js.map",
+    "static/js/3.fbd5b349.chunk.js": "/static/js/3.fbd5b349.chunk.js",
+    "static/js/3.fbd5b349.chunk.js.map": "/static/js/3.fbd5b349.chunk.js.map",
+    "index.html": "/index.html",
+    "static/css/main.f213b9b8.chunk.css.map": "/static/css/main.f213b9b8.chunk.css.map",
+    "static/js/2.952c5503.chunk.js.LICENSE.txt": "/static/js/2.952c5503.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.259bdd62.js",
-    "static/js/2.3ebd6308.chunk.js",
+    "static/js/runtime-main.ee2bd676.js",
+    "static/js/2.952c5503.chunk.js",
     "static/css/main.f213b9b8.chunk.css",
-    "static/js/main.ccbaf7d0.chunk.js"
+    "static/js/main.7c7f9781.chunk.js"
   ]
 }
