@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import App from "./Routes";
 import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter } from "react-router-dom";
+import "dotenv/config";
 
 if (module.hot) {
   module.hot.accept();

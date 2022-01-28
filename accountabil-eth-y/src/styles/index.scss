@@ -13,3 +13,15 @@ header {
 body {
   margin: 0;
 }
+form,
+label {
+  display: flex;
+  flex-direction: column;
+}
+label {
+  margin: 25px;
+}
+
+a {
+  display: block;
+}

@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { as2DecimalPlace } from "../utils/functions";
 
 function ExchangeRates({ amount }) {
   const [fiatExhangeRates, setFiatExhangeRates] = useState();
   let queryAmount = Number(amount);
 
-  let thatExchangeFormula = (amount, fiat) => {
-    return (Math.round(amount * fiat * 100) / 100).toFixed(2);
-  };
-
   useEffect(() => {
-    async function fetchExchangeRate(params) {
+    async function fetchExchangeRate() {
       let response = await fetch(
         "https://api.coinbase.com/v2/exchange-rates?currency=ETH"
       );
@@ -30,15 +27,9 @@ function ExchangeRates({ amount }) {
           <summary>See the exchange rate to Fiat currencies</summary>
           <div>
             This amount is approximately equivalent to...
-            <div>
-              GBP(£):{thatExchangeFormula(amount, fiatExhangeRates.GBP)}{" "}
-            </div>
-            <div>
-              USD($):{thatExchangeFormula(amount, fiatExhangeRates.USD)}{" "}
-            </div>
-            <div>
-              EUR($): {thatExchangeFormula(amount, fiatExhangeRates.EUR)}
-            </div>
+            <div>GBP(£):{as2DecimalPlace(amount * fiatExhangeRates.GBP)} </div>
+            <div>USD($):{as2DecimalPlace(amount * fiatExhangeRates.USD)} </div>
+            <div>EUR(€): {as2DecimalPlace(amount * fiatExhangeRates.EUR)}</div>
           </div>
         </details>
       ) : (

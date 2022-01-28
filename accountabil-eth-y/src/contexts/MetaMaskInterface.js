@@ -1,14 +1,13 @@
 import React, { createContext, useState, useEffect } from "react";
-// var Web3 = require("web3");
+import {
+  AccountabilityContractFactory,
+  createUserAccountabilityContract,
+} from "../smart-contract/contracts";
 
 export const MetaMaskInterface = createContext();
 
 export const MetaMaskInterfaceProvider = ({ children }) => {
   const [activeUserAccount, setActiveUserAccount] = useState();
-
-  //ethereum.stackexchange.com/questions/103355/how-to-keep-metamask-connection-to-the-ui-persistent-with-web3-react
-  //usecookies and git rid of lalals
-  //docs.metamask.io/guide/accessing-accounts.html
 
   useEffect(() => {
     let retrivedUser = localStorage.getItem("currentUser");
