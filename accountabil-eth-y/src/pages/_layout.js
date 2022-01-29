@@ -1,42 +1,84 @@
 import React, { useContext } from "react";
 import { Outlet } from "react-router";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faRetweet,
+  faFileDownload,
+  faFile,
+} from "@fortawesome/free-solid-svg-icons";
 
-import { MetaMaskInterface } from "../contexts/MetaMaskInterface";
-// import ProviderRequiredRestriction from "../components/ProviderRestricted";
+import { Web3Interface } from "../contexts/Web3Interface";
+import { Link } from "react-router-dom";
 
 function Layout() {
-  let { user, getAccount, forgetAccount } = useContext(MetaMaskInterface);
+  let {
+    userData: { walletAddress, contractAddresses },
+    selectedContract: { address },
+    dAPPFunctions: { getAccount, forgetAccount },
+    contractFactoryFunctions: { getContracts },
+    contractFunctions: { selectContract },
+  } = useContext(Web3Interface);
 
   return (
-    // <ProviderRequiredRestriction>
     <div>
       <header>
-        <h1>Accountabil-ETH-y 🤞🏾</h1>
+        <h1>
+          <Link to="/">Accountabil-ETH-y 🤞🏾</Link>
+        </h1>
         <div className="account-data">
-          <div>
-            user:
-            {user ? (
+          <div className="user-wallet">
+            Selected Wallet:
+            {walletAddress ? (
               <div>
-                {user} <button onClick={forgetAccount}>Log Out</button>
+                {walletAddress}
+                <button onClick={forgetAccount}>Forget Me</button>
               </div>
             ) : (
               <button onClick={getAccount}>Connect your account!</button>
             )}
           </div>
-          <div>
-            load contract:
-            <select name="contracts" id="contracts">
-              <option value="volvo">Account 1</option>
-              <option value="saab">Account 2</option>
-            </select>
+          <div className="user-contractAddresses">
+            <div>
+              <FontAwesomeIcon icon={faFile} size="lg" />
+              Selected Contract: {address}
+            </div>
+            <label>
+              Choose a contract (oldest to newest created)
+              <select
+                name="contractAddresses"
+                id="contractAddresses"
+                value={address || ""}
+                disabled={!contractAddresses.length}
+                onChange={(event) => selectContract(event.target.value)}
+              >
+                <option value="" defaultValue hidden>
+                  {contractAddresses.length
+                    ? "Please choose a contract"
+                    : "Retrive your contractAddresses to begin"}
+                </option>
+                ) (
+                {contractAddresses.map((contract, index) => (
+                  <option key={contract} value={contract}>
+                    [{index + 1}] {contract}
+                  </option>
+                ))}
+                )
+              </select>
+              <button onClick={getContracts} disabled={!walletAddress}>
+                {contractAddresses.length ? (
+                  <FontAwesomeIcon icon={faRetweet} size="lg" />
+                ) : (
+                  <FontAwesomeIcon icon={faFileDownload} size="lg" />
+                )}
+              </button>
+            </label>
           </div>
         </div>
       </header>
-      <div>
+      <>
         <Outlet />
-      </div>
+      </>
     </div>
-    // </ProviderRequiredRestriction>
   );
 }
 

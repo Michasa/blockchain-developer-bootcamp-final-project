@@ -7,7 +7,7 @@ let web3 = new Web3(Web3.givenProvider);
 
 export const AccountabilityContractFactory = new web3.eth.Contract(
   AccountabilityCheckerFactoryABI,
-  process.env.ACCOUNTABILITY_CHECKER_FACTORY_ADDRESS
+  process.env.REACT_APP_ACCOUNTABILITY_CHECKER_FACTORY_ADDRESS
 );
 
 export const createUserAccountabilityContract = (userAddress) => {

@@ -2,17 +2,14 @@ import React from "react";
 import ReactDOM from "react-dom";
 import App from "./Routes";
 import reportWebVitals from "./reportWebVitals";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 import "dotenv/config";
-
-if (module.hot) {
-  module.hot.accept();
-}
+import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 
 ReactDOM.render(
-  <BrowserRouter>
+  <HashRouter>
     <App />
-  </BrowserRouter>,
+  </HashRouter>,
   document.getElementById("root")
 );
 

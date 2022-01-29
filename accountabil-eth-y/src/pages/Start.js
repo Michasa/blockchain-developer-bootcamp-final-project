@@ -7,19 +7,28 @@ function Start() {
       What do you want to do?
       <div>
         <Link to="/create-contract" aria-disabled>
-          Create
+          Create a New Contract
         </Link>
       </div>
       or
       <div>
         <i> Connect a Accountability Checker contract to access these</i>
-        <Link to="/my-promise/create">Create Your Promise</Link>
-        <Link to="/my-promise/nominate">Nominate an Address</Link>
-        <Link to="/my-promise/check-in"> Daily Check In</Link>
-        <Link to="/my-promise/cashout">Cashout Promise</Link>
+        <ol>
+          <li>
+            <Link to="/my-promise/nominate">Nominate an Address</Link>
+          </li>
+          <li>
+            <Link to="/my-promise/create">Create Your Promise</Link>
+          </li>
+
+          <li>
+            <Link to="/my-promise/check-in"> Daily Check In</Link>
+          </li>
+          <li>
+            <Link to="/my-promise/cashout">Cashout Promise</Link>
+          </li>
+        </ol>
       </div>
-      {/* <Link to="/my-promise/submit">Submit</Link>
-      <Link to="/my-promise/cashout">Cashout</Link> */}
     </div>
   );
 }

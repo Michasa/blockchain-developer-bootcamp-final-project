@@ -7,9 +7,33 @@ header {
   .account-data {
     display: flex;
     flex-direction: row;
+
+    .user-contractAddresses,
+    .user-wallet {
+      margin: 5px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
   }
 }
+h1,
+h2,
+h3,
+h4,
+h5 {
+  color: #00bfff;
+}
 
+div#root > div {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+h1 > a {
+  text-decoration: none;
+  color: inherit;
+}
 body {
   margin: 0;
 }
@@ -19,9 +43,29 @@ label {
   flex-direction: column;
 }
 label {
-  margin: 25px;
+  margin: 25px 0;
 }
 
 a {
   display: block;
+}
+main {
+  position: relative;
+  height: 100%;
+}
+
+.loader-container {
+  position: absolute;
+  height: 100%;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #a6c3dd9e;
+  display: flex;
+  flex-direction: column;
+  color: #ee811b;
+  h2 {
+    color: #ee811b;
+  }
 }

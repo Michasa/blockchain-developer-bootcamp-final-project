@@ -7,9 +7,7 @@ function ExchangeRates({ amount }) {
 
   useEffect(() => {
     async function fetchExchangeRate() {
-      let response = await fetch(
-        "https://api.coinbase.com/v2/exchange-rates?currency=ETH"
-      );
+      let response = await fetch(process.env.REACT_APP_EXCHANGE_RATES_ENDPOINT);
       let {
         data: {
           rates: { GBP, USD, EUR },

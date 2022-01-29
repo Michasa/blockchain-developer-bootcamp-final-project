@@ -74,7 +74,7 @@ function PromiseDefinitionForm({
         </label>
         <label>
           <label>
-            Wager(ETH): This is equivalent to{" "}
+            Wager(ETH): This is equivalent to
             <input
               type="number"
               value={userPromiseData.dailyWager}
@@ -83,7 +83,7 @@ function PromiseDefinitionForm({
               onChange={(event) =>
                 handleUpdateData(event.target.value, "dailyWager")
               }
-            />{" "}
+            />
             <ExchangeRates amount={userPromiseData.dailyWager} />
           </label>
           <div>

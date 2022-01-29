@@ -9,12 +9,12 @@ import {
   Cashout,
   NotFound,
 } from "./pages";
-import { MetaMaskInterfaceProvider } from "./contexts/MetaMaskInterface.js";
+import { Web3InterfaceProvider } from "./contexts/Web3Interface/";
 import "./styles/index.scss";
 
 function App() {
   return (
-    <MetaMaskInterfaceProvider>
+    <Web3InterfaceProvider>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Start />} />
@@ -29,7 +29,7 @@ function App() {
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </MetaMaskInterfaceProvider>
+    </Web3InterfaceProvider>
   );
 }
 
