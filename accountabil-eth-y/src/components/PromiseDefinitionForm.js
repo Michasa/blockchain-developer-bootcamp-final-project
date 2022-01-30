@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ExchangeRates from "./ExchangeRates";
 import dayjs from "dayjs";
-let localizedFormat = require("dayjs/plugin/localizedFormat");
+import localizedFormat from "dayjs/plugin/localizedFormat";
 dayjs.extend(localizedFormat);
 
 let DateDropdown = () => {
@@ -20,6 +20,7 @@ function PromiseDefinitionForm({
   handleSubmitForm,
   handleUpdateData,
   userPromiseData,
+  error,
 }) {
   const [promiseTimingsFormatted, setPromiseTimingsFormatted] = useState({
     timeNow: dayjs().format("LL"),
@@ -41,7 +42,7 @@ function PromiseDefinitionForm({
     <div>
       <form onSubmit={handleSubmitForm}>
         <label>
-          Commitments
+          Commitments (please enter at least one)
           {userPromiseData.userCommitments.map((commitment, index) => (
             <input
               key={`commit${index}`}
@@ -81,7 +82,7 @@ function PromiseDefinitionForm({
               min={0}
               step={0.0001}
               onChange={(event) =>
-                handleUpdateData(event.target.value, "dailyWager")
+                handleUpdateData(Number(event.target.value), "dailyWager")
               }
             />
             <ExchangeRates amount={userPromiseData.dailyWager} />
@@ -111,6 +112,12 @@ function PromiseDefinitionForm({
             />
           </div>
         </label>
+        {error && (
+          <b>
+            There is an error with your submission! Please enter these details
+            correctly
+          </b>
+        )}
         <input type="submit" />
       </form>
     </div>

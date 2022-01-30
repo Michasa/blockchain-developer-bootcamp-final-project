@@ -38,7 +38,8 @@ body {
   margin: 0;
 }
 form,
-label {
+label,
+.contract-wallet-details {
   display: flex;
   flex-direction: column;
 }
@@ -65,7 +66,53 @@ main {
   display: flex;
   flex-direction: column;
   color: #ee811b;
+  z-index: 999999;
   h2 {
     color: #ee811b;
+  }
+}
+.eth {
+  color: #ee811b;
+}
+
+.contract-wallet-details {
+  & > * {
+    background-color: #a6c3dd9e;
+  }
+}
+
+.selected-contract-details {
+  background-color: #a6c3dd9e;
+}
+
+ul.promise-timings {
+  & li {
+    margin: 10px 0;
+  }
+}
+.commitment-container {
+  margin-left: 40px;
+}
+.commitment {
+  display: flex;
+  flex-direction: row;
+  margin: 25px 0;
+  font-size: 1.5rem;
+  align-items: center;
+  & label {
+    margin: 0;
+    height: 2rem;
+  }
+}
+
+.promisePots {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  & span {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 }

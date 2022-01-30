@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import {
   Layout,
   Start,
-  DefinePromise,
+  CreatePromise,
   Nominate,
   CreateContract,
   CheckIn,
@@ -20,7 +20,7 @@ function App() {
           <Route index element={<Start />} />
           <Route path="create-contract" element={<CreateContract />} />
           <Route path="my-promise">
-            <Route exact path="create" element={<DefinePromise />} />
+            <Route exact path="create" element={<CreatePromise />} />
             <Route exact path="nominate" element={<Nominate />} />
             <Route exact path="check-in" element={<CheckIn />} />
             <Route exact path="cashout" element={<Cashout />} />

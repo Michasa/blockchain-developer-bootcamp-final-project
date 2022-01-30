@@ -1,6 +1,7 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
-function RequirementsGate({ isValid, message, children }) {
+function RequirementsGate({ isValid, message, children, nohomepage }) {
   return (
     <>
       {isValid ? (
@@ -8,6 +9,11 @@ function RequirementsGate({ isValid, message, children }) {
       ) : (
         <div>
           <h1>{message}</h1>
+          {!nohomepage && (
+            <Link to="/" aria-disabled>
+              Return to Homepage
+            </Link>
+          )}
         </div>
       )}
     </>

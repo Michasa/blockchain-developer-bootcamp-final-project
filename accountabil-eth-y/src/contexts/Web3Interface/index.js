@@ -1,20 +1,20 @@
+import dayjs from "dayjs";
 import React, { createContext, useState, useEffect } from "react";
 import Web3 from "web3";
-import {
-  AccountabilityContractFactory,
-  createUserAccountabilityContract,
-} from "../../smart-contract/contracts";
+import { AccountabilityCheckerABI } from "../../smart-contract/abi/AccountabilityChecker";
+import { AccountabilityContractFactory } from "../../smart-contract/contracts";
+import { returnUTF8Array } from "../../utils/functions";
 import {
   getCheckClose,
   getCheckOpen,
   getContractOwner,
+  getPromiseDeadline,
   getIsPromiseActive,
   getNominee,
-} from "./ContractFunctions";
+} from "./ContractGetterFunctions";
 
 let web3 = new Web3(Web3.givenProvider);
 let { ethereum } = window;
-
 export const Web3Interface = createContext();
 
 let defaultActiveUserData = {
@@ -22,7 +22,7 @@ let defaultActiveUserData = {
   contractAddresses: [],
 };
 
-let defaultSelectedContract = {
+let defaultActiveContractData = {
   address: null,
   owner: null,
   nominatedAddress: null,
@@ -30,26 +30,33 @@ let defaultSelectedContract = {
   promiseDeadline: null,
   checkOpen: null,
   checkClose: null,
-  instance: null,
 };
 
 export const Web3InterfaceProvider = ({ children }) => {
-  const [activeUserData, setActiveUserAccount] = useState(
-    defaultActiveUserData
-  );
-  const [selectedContract, setSelectedContract] = useState(
-    defaultSelectedContract
-  );
-
   const [isLoading, setIsLoading] = useState(false);
+  const [activeUserData, setActiveUserData] = useState(defaultActiveUserData);
+  const [selectedContract, setSelectedContract] = useState(
+    defaultActiveContractData
+  );
 
-  ethereum.on("accountsChanged", function (accounts) {
-    if (accounts[0]) forgetUserAccount();
-  });
+  ethereum &&
+    ethereum.on("accountsChanged", function (accounts) {
+      if (accounts[0]) forgetUserAccount();
+    });
 
   useEffect(() => {
     retrivedUser();
-  }, [isLoading, selectedContract]);
+  }, []);
+
+  const getUserAccount = async () => {
+    let accounts = await ethereum.request({ method: "eth_requestAccounts" });
+    if (accounts) {
+      let newState = { walletAddress: accounts[0], contractAddresses: [] };
+      setActiveUserData(newState);
+      localStorage.removeItem("Acc_UserDetails");
+      localStorage.setItem("Acc_UserDetails", JSON.stringify(newState));
+    }
+  };
 
   const retrivedUser = async () => {
     let retrivedUserData = localStorage.getItem("Acc_UserDetails");
@@ -57,24 +64,20 @@ export const Web3InterfaceProvider = ({ children }) => {
     let { walletAddress, contractAddresses } = JSON.parse(retrivedUserData);
     ethereum.request({ method: "eth_requestAccounts" }).then((accounts) => {
       if (walletAddress === accounts[0]) {
-        setActiveUserAccount({ walletAddress, contractAddresses });
+        setActiveUserData({ walletAddress, contractAddresses });
       } else {
         forgetUserAccount();
       }
     });
   };
 
-  const getUserAccount = async () => {
-    let accounts = await ethereum.request({ method: "eth_requestAccounts" });
-    if (accounts) {
-      let newState = { walletAddress: accounts[0], contractAddresses: [] };
-      setActiveUserAccount(newState);
-      localStorage.removeItem("Acc_UserDetails");
-      localStorage.setItem("Acc_UserDetails", JSON.stringify(newState));
-    }
+  const forgetUserAccount = async () => {
+    setActiveUserData(defaultActiveUserData);
+    setSelectedContract(defaultActiveContractData);
+    localStorage.removeItem("Acc_UserDetails");
   };
 
-  const getNewContract = async () => {
+  const createACContract = async () => {
     setIsLoading(true);
 
     let data = await AccountabilityContractFactory.methods
@@ -84,11 +87,11 @@ export const Web3InterfaceProvider = ({ children }) => {
       })
       .on("error", function (error, receipt) {
         setIsLoading(false);
-        console.error("fromError Bit", error);
-        console.error("fromError Bit2", receipt);
+        console.error("error receipt", receipt);
       })
       .then((results) => {
         setIsLoading(false);
+        setSelectedContract(defaultActiveContractData);
         return results;
       });
 
@@ -98,33 +101,7 @@ export const Web3InterfaceProvider = ({ children }) => {
     }
   };
 
-  const setNominatedAccount = async (address) => {
-    setIsLoading(true);
-    const { instance: AccountabilityContract } = selectedContract;
-
-    let data = await AccountabilityContract.methods
-      .setNominee(address)
-      .send({
-        from: activeUserData.walletAddress,
-      })
-      .on("error", function (error, receipt) {
-        // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
-        setIsLoading(false);
-        console.error("fromError Bit", error);
-        console.error("fromError Bit2", receipt);
-      })
-      .then((results) => {
-        setIsLoading(false);
-        return results;
-      });
-
-    if (data) {
-      const { transactionHash, events } = data;
-      return { transactionHash, events };
-    }
-  };
-
-  const getUserContracts = async () => {
+  const getUserACContracts = async () => {
     let foundContracts = await AccountabilityContractFactory.methods
       .findMyContracts()
       .call({
@@ -135,59 +112,214 @@ export const Web3InterfaceProvider = ({ children }) => {
         ...activeUserData,
         contractAddresses: [...foundContracts],
       };
-      setActiveUserAccount(newState);
+      setActiveUserData(newState);
       localStorage.removeItem("Acc_UserDetails");
       localStorage.setItem("Acc_UserDetails", JSON.stringify(newState));
     }
   };
 
-  const forgetUserAccount = async () => {
-    setActiveUserAccount(defaultActiveUserData);
-    setSelectedContract(defaultSelectedContract);
-    localStorage.removeItem("Acc_UserDetails");
+  const setActiveACContractData = async (contractAddress) => {
+    if (!web3.utils.isAddress(contractAddress)) return;
+    let AccountabilityCheckerContract = new web3.eth.Contract(
+      AccountabilityCheckerABI,
+      contractAddress
+    );
+    if (!AccountabilityCheckerContract)
+      console.error("couldnt create contract instance");
+    setSelectedContract({
+      ...selectedContract,
+      address: AccountabilityCheckerContract._address,
+      owner: await getContractOwner(AccountabilityCheckerContract),
+      nominatedAddress: await getNominee(AccountabilityCheckerContract),
+      isPromiseActive: await getIsPromiseActive(AccountabilityCheckerContract),
+      promiseDeadline: await getPromiseDeadline(AccountabilityCheckerContract),
+      checkOpen: await getCheckOpen(AccountabilityCheckerContract),
+      checkClose: await getCheckClose(AccountabilityCheckerContract),
+      instance: AccountabilityCheckerContract,
+    });
   };
 
-  const createPromise = async () => {};
+  const setNominatedAccount = async (address) => {
+    setIsLoading(true);
+    const { instance: AccountabilityCheckerContract } = selectedContract;
 
-  const cashoutPromise = async () => {};
+    let data = await AccountabilityCheckerContract.methods
+      .setNominee(address)
+      .send({
+        from: activeUserData.walletAddress,
+      })
+      .on("error", function (error, receipt) {
+        setIsLoading(false);
+        console.error("error receipt", receipt);
+      })
+      .then((results) => {
+        setIsLoading(false);
+        return results;
+      });
 
-  const setActiveContract = async (contractAddress) => {
-    if (!web3.utils.isAddress(contractAddress)) return;
-    let AccountabilityContract =
-      createUserAccountabilityContract(contractAddress);
-    if (!AccountabilityContract) return;
+    if (data) {
+      const { transactionHash, events } = data;
+      return { transactionHash, events };
+    }
+  };
+
+  const createPromise = async (transactionData) => {
+    const { instance: AccountabilityCheckerContract } = selectedContract;
+
+    setIsLoading(true);
+    const { commitments, dailyWager, deadline, totalPledgeAmount } =
+      transactionData;
+
+    let data = await AccountabilityCheckerContract.methods
+      .activatePromise(commitments, dailyWager, deadline)
+      .send({
+        from: activeUserData.walletAddress,
+        value: totalPledgeAmount,
+      })
+      .on("error", function (error, receipt) {
+        setIsLoading(false);
+        console.error("error receipt", receipt);
+      })
+      .then(async (results) => {
+        setIsLoading(false);
+        updatePromiseData();
+
+        return results;
+      });
+
+    if (data) {
+      const { transactionHash, events } = data;
+      console.log(events);
+      return { transactionHash, events };
+    }
+  };
+
+  const updatePromiseData = async () => {
+    const { instance: AccountabilityCheckerContract } = selectedContract;
 
     setSelectedContract({
-      address: AccountabilityContract._address,
-      owner: await getContractOwner(AccountabilityContract),
-      nominatedAddress: await getNominee(AccountabilityContract),
-      isPromiseActive: await getIsPromiseActive(AccountabilityContract),
-      promiseDeadline: await getContractOwner(AccountabilityContract),
-      checkOpen: await getCheckOpen(AccountabilityContract),
-      checkClose: await getCheckClose(AccountabilityContract),
-      instance: AccountabilityContract,
+      ...selectedContract,
+      isPromiseActive: await getIsPromiseActive(AccountabilityCheckerContract),
+      promiseDeadline: await getPromiseDeadline(AccountabilityCheckerContract),
+      checkOpen: await getCheckOpen(AccountabilityCheckerContract),
+      checkClose: await getCheckClose(AccountabilityCheckerContract),
     });
+  };
+
+  const getPromisePrivateData = async () => {
+    const { instance: AccountabilityCheckerContract, isPromiseActive } =
+      selectedContract;
+
+    if (isPromiseActive) {
+      let response1 = await AccountabilityCheckerContract.methods
+        .getPromiseDetails()
+        .call({
+          from: activeUserData.walletAddress,
+        });
+
+      let response2 = await AccountabilityCheckerContract.methods
+        .getPotsDetails()
+        .call({
+          from: activeUserData.walletAddress,
+        });
+      if (response1 && response2) {
+        const { 2: checks_left, 5: commitmentsAsHex } = response1;
+        const { 0: pledgePot, 1: rewardPot, 2: penaltyPot } = response2;
+        let commitments = returnUTF8Array(commitmentsAsHex);
+
+        //this is because I didnt stop calculating check in time once there were zero checks left ffs
+        if (checks_left == 0) {
+          removeFinalCheckinTimes();
+        }
+
+        return { commitments, checks_left, pledgePot, rewardPot, penaltyPot };
+      } else {
+        console.error("there was a problem with this request");
+      }
+    }
+  };
+  const removeFinalCheckinTimes = () => {
+    setSelectedContract({
+      ...selectedContract,
+      checkOpen: null,
+      checkClose: null,
+    });
+  };
+  const submitPromiseCheckIn = async (checkInResult) => {
+    setIsLoading(true);
+    const { instance: AccountabilityCheckerContract } = selectedContract;
+
+    let timeNow = dayjs().unix();
+
+    let data = await AccountabilityCheckerContract.methods
+      .checkCommitments(checkInResult, timeNow)
+      .send({
+        from: activeUserData.walletAddress,
+      })
+      .on("error", function (error, receipt) {
+        setIsLoading(false);
+        console.error("error receipt", receipt);
+      })
+      .then(async (results) => {
+        setIsLoading(false);
+        updatePromiseData();
+        console.log(results);
+        return results;
+      });
+
+    if (data) {
+      console.log(data);
+      const { transactionHash, events } = data;
+      return { transactionHash, events };
+    }
+  };
+
+  const cashoutPromise = async () => {
+    setIsLoading(true);
+    const { instance: AccountabilityCheckerContract } = selectedContract;
+
+    let data = await AccountabilityCheckerContract.methods
+      .cashOut()
+      .send({
+        from: activeUserData.walletAddress,
+      })
+      .on("error", function (error, receipt) {
+        setIsLoading(false);
+        console.error("error receipt", receipt);
+      })
+      .then(async (results) => {
+        setIsLoading(false);
+        updatePromiseData();
+        console.log(results);
+        return results;
+      });
+
+    if (data) {
+      const { transactionHash, events } = data;
+      return { transactionHash, events };
+    }
   };
 
   return (
     <Web3Interface.Provider
       value={{
         userData: activeUserData,
-        selectedContract,
+        contractData: selectedContract,
         dAPPFunctions: {
           getAccount: getUserAccount,
           forgetAccount: forgetUserAccount,
         },
         contractFactoryFunctions: {
-          getContracts: getUserContracts,
-          createContract: getNewContract,
+          getContracts: getUserACContracts,
+          createContract: createACContract,
         },
         contractFunctions: {
-          selectContract: setActiveContract,
-          getContratDetails: setActiveContract,
+          selectContract: setActiveACContractData,
           setNominee: setNominatedAccount,
           createPromise,
+          submitCheckIn: submitPromiseCheckIn,
           cashoutPromise,
+          getPromisePrivateData,
         },
         isLoading,
       }}

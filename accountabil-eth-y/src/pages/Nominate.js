@@ -1,40 +1,35 @@
 import React, { useState, useContext, useEffect } from "react";
-import Web3 from "web3";
 import RequirementsGate from "../components/RequirementsGate";
 import Loader from "../components/Loader";
 import TransactionResultScreen from "../components/TransactionResultScreen";
 import { Web3Interface } from "../contexts/Web3Interface";
-let web3 = new Web3(Web3.givenProvider);
-
-let { isAddress, toBN } = web3.utils;
+import { isValidNonEmptyAddress } from "../utils/functions";
 
 function Nominate() {
-  const [newNominee, setNewNominee] = useState();
-  const [isFunctionLoading, setIsFunctionLoading] = useState();
+  const [newNominee, setNewNominee] = useState("");
+  const [isTxnLoading, setIsTxnLoading] = useState();
   const [transactionData, setTransactionData] = useState();
   let {
-    selectedContract: { address, nominatedAddress, isPromiseActive },
+    contractData: { address, nominatedAddress, isPromiseActive },
     contractFunctions: { setNominee },
     isLoading,
   } = useContext(Web3Interface);
 
   useEffect(() => {
     setNewNominee(null);
-    setIsFunctionLoading(null);
-
-    setIsFunctionLoading(isLoading);
+    setIsTxnLoading(isLoading);
   }, [address, isLoading]);
 
-  let handleSubmit = async (event) => {
+  let handleTxnSubmit = async (event) => {
     event.preventDefault();
-    if (!isAddress(newNominee) && toBN(nominatedAddress).isZero())
+    if (isValidNonEmptyAddress(newNominee))
       console.error("This isnt a valid address");
 
     let data = await setNominee(newNominee);
-    if (data && !isFunctionLoading) {
+    if (data && !isTxnLoading) {
       setTransactionData(data);
     } else {
-      console.error("I think something went wrong");
+      console.error("I think something went wrong 5");
     }
   };
 
@@ -49,10 +44,10 @@ function Nominate() {
           message="This contract has an active promise! Please let it expire and cashout to nominate a new address"
         >
           <TransactionResultScreen
-            success={!!transactionData}
+            success={transactionData && !isTxnLoading}
             data={transactionData}
           >
-            {isFunctionLoading && <Loader />}
+            {isTxnLoading && <Loader />}
             <div className="">
               <h1> Set your Nominee!</h1>
               <p>
@@ -66,12 +61,11 @@ function Nominate() {
                 <li> This promise contract</li>
               </ul>
 
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleTxnSubmit}>
                 <p>
                   Your current nominated address is:
                   <b>
-                    {isAddress(nominatedAddress) &&
-                    !toBN(nominatedAddress).isZero() ? (
+                    {isValidNonEmptyAddress(nominatedAddress) ? (
                       <span>{nominatedAddress}</span>
                     ) : (
                       <span>
@@ -88,10 +82,10 @@ function Nominate() {
                     required
                     value={newNominee}
                     onChange={(event) => setNewNominee(event.target.value)}
-                    disabled={isFunctionLoading}
+                    disabled={isTxnLoading}
                   />
                 </label>
-                <input type="submit" disabled={isFunctionLoading} />
+                <input type="submit" disabled={isTxnLoading} />
               </form>
             </div>
           </TransactionResultScreen>

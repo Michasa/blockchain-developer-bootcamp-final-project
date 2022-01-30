@@ -1,7 +1,7 @@
 import Layout from "./_layout";
 // import Submit from "./Submit";
 import Cashout from "./Cashout";
-import DefinePromise from "./DefinePromise";
+import CreatePromise from "./CreatePromise";
 import CreateContract from "./CreateContract";
 import Start from "./Start";
 import Nominate from "./Nominate";
@@ -14,7 +14,7 @@ export {
   Layout,
   CheckIn,
   Cashout,
-  DefinePromise,
+  CreatePromise,
   CreateContract,
   Start,
   Nominate,

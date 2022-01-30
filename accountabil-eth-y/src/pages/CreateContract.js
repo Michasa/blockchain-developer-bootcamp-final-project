@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import Loader from "../components/Loader";
+import RequirementsGate from "../components/RequirementsGate";
 import TransactionResultScreen from "../components/TransactionResultScreen";
 import { Web3Interface } from "../contexts/Web3Interface";
 
 function CreateContract() {
   let {
+    userData,
     contractFactoryFunctions: { createContract, getContracts },
     isLoading,
   } = useContext(Web3Interface);
@@ -20,22 +22,28 @@ function CreateContract() {
     let data = await createContract();
     if (data && !isFunctionLoading) {
       setTransactionData(data);
+      console.log(data);
       getContracts();
     } else {
-      console.error("I think something went wrong");
+      console.error("I think something went wrong 3");
     }
   };
 
   return (
     <main>
-      {isFunctionLoading && <Loader />}
-      <TransactionResultScreen
-        success={!!transactionData}
-        data={transactionData}
+      <RequirementsGate
+        isValid={!!userData.walletAddress}
+        message="Please connect your wallet to begin!"
       >
-        Click to create your and deploy your Accountabil-ETH-y Smart Contract
-        <button onClick={handleSubmit}>Request</button>
-      </TransactionResultScreen>
+        {isFunctionLoading && <Loader />}
+        <TransactionResultScreen
+          success={transactionData && !isFunctionLoading}
+          data={transactionData}
+        >
+          Click to create your and deploy your Accountabil-ETH-y Smart Contract
+          <button onClick={handleSubmit}>Request</button>
+        </TransactionResultScreen>{" "}
+      </RequirementsGate>
     </main>
   );
 }
