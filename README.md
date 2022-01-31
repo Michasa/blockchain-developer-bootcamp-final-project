@@ -2,39 +2,161 @@
 
 ### _My promise is BOND!_ 💯
 
-- A platform where people further motivate themselves to complete goals further by staking ETH on their commitments.
-- Depends on an external api that providing information on trackable commitment's fulfilment.
+- Website = https://michasa.github.io/blockchain-developer-bootcamp-final-project/ (Provider required!)
+- Screencast walkthrough = (Link to this is in the _final-project-checklist.txt_ file)
 
-### Work Flow
+Hello and welcome to my final project to for the course! Please send my Certificate NFT to this address = **0x7C24027B1C9A1b7E4c300dcBcBbCf48CC020a656**
 
-1. On Front End Application user inputs:
+e5b293105ccd490f32e18047351bb7fb434abebdea587cbe412acf32391a53cb contracts
+e94f21755fa69fb3974b4ada89e2c4ff2b66aa2c7f6f14027de2b788eb6f9ded owner
+3d4a64928c93b0e43f55be0de47806f3656f1072a6cbb67a9fe31061969d7081 nominee
 
-- description commitment (e.g. "🏋️I will visit the gym at least twice a week", "📺 I will only watch Netflix for 5hrs a week", "💻 I will commit this github repo five times a week")
-- external api tracking this
-- amount staked.
-- penalty protocol (forgiving, strict)
-- time period.
+---
 
-2. This deploys a Smart Contract to which the user's account transfers the ETH to keep
-3. If the user FAILS ❎ penalty is executed; defined amount deducted from staked amount until it is 0 (forgiving) all amount is taken (strict). Confiscated money is transfered to money pot account.
-4. If the user succeeds ✅ money is returned to original user account.
+### Project Structure
 
-### The Contracts!!
+This is a bi-directory project made up of the _accountabil-eth-y_ and _smartcontract_ folders, see below for a detailed map of this directory of the files mentioned below. Please make sure you have navigated to the specific directory before performing terminal commands described below!
 
-1. Accountability Checker (https://ropsten.etherscan.io/address/0x461d7057A672e4111B7445f7382E4343484A84e8)
-   ADDRESS = 0x461d7057A672e4111B7445f7382E4343484A84e8
-   Where the magic happens ✨. Contract that incentivizes a user to keep to their commitments at the risk of either earning or losing their daily wager. This contract is used by the factory to make clones.
+```
+blockchain-developer-bootcamp-final-project
+├─ accountabil-eth-y
+│  ├─ public
+│  ├─ src
+│  │  ├─ components
+│  │  │  ├─ ExchangeRates.js
+│  │  │  ├─ Loader.js
+│  │  │  ├─ PotTotals.js
+│  │  │  ├─ PromiseDefinitionForm.js
+│  │  │  ├─ RequirementsGate.js
+│  │  │  └─ TransactionResultScreen.js
+│  │  ├─ contexts
+│  │  │  └─ Web3Interface
+│  │  │     ├─ ContractGetterFunctions.js
+│  │  │     └─ index.js
+│  │  ├─ pages
+│  │  │  ├─ Cashout.js
+│  │  │  ├─ CheckIn.js
+│  │  │  ├─ CreateContract.js
+│  │  │  ├─ CreatePromise.js
+│  │  │  ├─ Nominate.js
+│  │  │  ├─ NotFound.js
+│  │  │  ├─ Start.js
+│  │  │  ├─ _layout.js
+│  │  │  └─ index.js
+│  │  ├─ smart-contract
+│  │  │  ├─ abi
+│  │  │  │  ├─ AccountabilityChecker.js
+│  │  │  │  └─ AccountabilityCheckerFactory.js
+│  │  │  └─ contracts.js
+│  │  ├─ styles
+│  │  │  └─ index.scss
+│  │  ├─ utils
+│  │  │  ├─ Validation
+│  │  │  │  └─ PromiseDefintion.js
+│  │  │  └─ functions.js
+│  │  ├─ Routes.js
+│  │  ├─ index.js
+│  │  └─ reportWebVitals.js
+│  └─ package.json
+├─ smartcontract
+│  ├─ contracts
+│  │  ├─ AccountabilityChecker.sol
+│  │  ├─ AccountabilityCheckerFactory.sol
+│  │  └─ Migrations.sol
+│  ├─ migrations
+│  │  ├─ 1_initial_migration.js
+│  │  └─ 2_deploy_accountability_checker.js
+│  ├─ test
+│  │  ├─ utils
+│  │  │  ├─ functions.js
+│  │  │  └─ variables.js
+│  │  ├─ 0_Smart_Contract_Initialization.js
+│  │  ├─ 1_Promise_Activation.js
+│  │  ├─ 2_Check_Commitments.js
+│  │  ├─ 3_Promise_Cashout.js
+│  │  └─ 4_Contract_Reusablity.js
+│  ├─ package.json
+│  └─ truffle-config.js
+├─ FinalProjectIdea.md
+└─ README.md (You are here 😄)
+```
 
-2. Accountability Checker Factory (https://ropsten.etherscan.io/address/0x461d7057A672e4111B7445f7382E4343484A84e8#code)
-   ADDRESS = 0x461d7057A672e4111B7445f7382E4343484A84e8
-   Factory contract that creates clones of the Accountability Checker for a user. Also used to retrive a users' previous contracts in case they lose them. It is owned by (0x8c19e0Fd2717261E2E49Bafd74A412333F400762)
+---
 
-### How to use
+### _smartcontract_
 
-## TESTS
+This folder contains my smart contract. It uses truffle for deployment and migration, and various other packages to work and so begin by installing them with
 
-Certains tests take a longer duration because they are using loops to simulate the passing of time, and so it can look like the tests have frozen. But be rest assured that they're working as intended...lol I hope.
+```bash
+npm install
 
-It is advised to run tests files that have large time simulates separate to avoid this issue
+```
 
-> > e.g. $ test test/3_Promise_Cashout.js
+within the directory. Within the _contracts_ folder the contracts relevant to this project are
+
+- **_smartcontract/contracts/AccountabilityChecker.sol _** : This is the smart contract users use to create and check their promises
+- **_smartcontract/contracts/AccountabilityCheckerFactory.sol _** : A smart contract that acts as a proxy factory; duplicates copies of the linked AccountabilityChecker smart contract. Also provides functions that allows a user to retrive AccountabilityChecker smart contracts they own
+
+And their migration file is \_migrations/2_deploy_accountability_checker.js. These contracts both inherit from some openzeppelin contracts.
+
+#### Tests
+
+This project contains approximately 50 tests to test the various aspects of both these contracts from start to finish of the proposed use of my smart-contract application. The _utils_ folder contains various constants and functions that are used repeatedly in the tests. To run them all use the command:
+
+```bash
+truffle test
+
+```
+
+Certains tests (particularly 3_Promise_Cashout.js and 4_Contract_Reusablity.js) take a longer duration because they are using loops to simulate the passing of time, and so it can look like the tests have frozen. But be rest assured that theyre working as intended...lol I hope. It is advised to run tests files that have large time simulates separate to avoid this issue
+
+```bash
+truffle test test/3_Promise_Cashout.js
+
+```
+
+#### Deployment
+
+The _truffle-config.js_ has been configured to deploy on the Ropesten network and requires 2 environment variables to work (see _.envsample_, remove the _sample_ bit of the file name to use ); `INFURA_API_KEY` which can be got [by signing up to INFURA](https://infura.io/) and `MNEMONIC` which is 24 word seed phrase to generate the wallets associated with the deployment.
+Please see _deployed_address.txt_ for the address of smart contracts have already deployed
+
+---
+
+### _accountabil-eth-y_
+
+This folder contains the front end part of my project, it is a react application. To install the dependancies please use the following command
+
+```bash
+nvm use; npm install
+
+```
+
+There is an env file associated with this project (see _.envsample_, remove the _sample_ bit of the file name to use ), there isn't anything required at this stage. There was an intention to use the Ethscan api (REACT_APP_ETHSCAN_API_KEY = "") but it was never implemented
+
+#### Localhost
+
+The project can be served from localhost3000 by using the command
+
+```bash
+npm run start
+
+```
+
+A provider such as Metamask is required to interact with the project.
+
+#### Files and Folders of interest
+
+There are so many things going on with this part of the project but here are ones of note:
+
+- **_accountabil-eth-y/src/contexts/index.js _**: Context Provider, contains various functions that are imported by pages to call functions on the AccountabilityCheckerFactory and AccountabilityChecker contracts
+- **_accountabil-eth-y/src/pages _**: pages of the application that users interact with are stored here.
+- **_accountabil-eth-y/src/smart-contract/ _**: Where the ABI of the AccountabilityCheckerFactory and AccountabilityChecker contracts is kept (please update this if you make changes to the smart contracts in smartcontract/contracts) and functions that instantiate Contract objects from them.
+- **_accountabil-eth-y/src/Routes.js _**: Defines the routing structure of the application.
+- **_accountabil-eth-y/src/utils _**: contains functions used repeatedly in this application. Validation schema used for promise creation lives here.
+
+---
+
+### Closing Remarks
+
+This is a MVP project and I intend to return to this at a later date to clean up the code base and add some much needed CSS sparkle ✨.
+Thank you for marking my project, I hope to develop more web3 applications like this!
