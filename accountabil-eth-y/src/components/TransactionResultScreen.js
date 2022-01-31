@@ -9,7 +9,7 @@ function TransactionResultScreen({ data, success, children }) {
           <h1>Success!</h1>
           <p>Your request has gone through, please see the changes below</p>
           <div>[Transaction stuff here]</div>
-          <Link to="/start" aria-disabled>
+          <Link to="/" aria-disabled>
             Return to Start Page
           </Link>
         </div>

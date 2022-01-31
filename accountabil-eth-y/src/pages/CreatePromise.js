@@ -14,7 +14,7 @@ let { toWei } = web3.utils;
 
 let CreatePromise = () => {
   let {
-    contractData: { address, isPromiseActive },
+    contractData: { address, isPromiseActive, nominatedAddress },
     contractFunctions: { createPromise },
     isLoading,
   } = useContext(Web3Interface);
@@ -83,18 +83,23 @@ let CreatePromise = () => {
           isValid={!isPromiseActive}
           message="This contract has an active promise! Please let it reach its deadline and cashout to define a new one"
         >
-          <TransactionResultScreen
-            success={transactionData && !isFunctionLoading}
-            data={transactionData}
+          <RequirementsGate
+            isValid={nominatedAddress}
+            message="Please set a nominee before you define a promise!"
           >
-            {isFunctionLoading && <Loader />}
-            <PromiseDefinitionForm
-              userPromiseData={userPromise}
-              handleSubmitForm={handleSubmit}
-              handleUpdateData={handleUpdate}
-              error={error}
-            />
-          </TransactionResultScreen>
+            <TransactionResultScreen
+              success={transactionData && !isFunctionLoading}
+              data={transactionData}
+            >
+              {isFunctionLoading && <Loader />}
+              <PromiseDefinitionForm
+                userPromiseData={userPromise}
+                handleSubmitForm={handleSubmit}
+                handleUpdateData={handleUpdate}
+                error={error}
+              />
+            </TransactionResultScreen>
+          </RequirementsGate>
         </RequirementsGate>
       </RequirementsGate>
     </main>

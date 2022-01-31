@@ -44,7 +44,7 @@ function Layout() {
       checkOpen: contractData.checkOpen,
       checkClose: contractData.checkClose,
     });
-  }, [contractData]);
+  }, [contractData, contractData.address]);
 
   let checkForProvider = async (params) => {
     let provider = await detectEthereumProvider();
@@ -113,7 +113,7 @@ function Layout() {
             </div>
             <div className="contract-wallet-details">
               <div className="user-wallet">
-                Selected Wallet:
+                Selected Account:
                 {walletAddress ? (
                   <div>
                     {walletAddress}

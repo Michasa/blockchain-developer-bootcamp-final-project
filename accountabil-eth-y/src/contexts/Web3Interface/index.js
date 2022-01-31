@@ -92,6 +92,12 @@ export const Web3InterfaceProvider = ({ children }) => {
       .then((results) => {
         setIsLoading(false);
         setSelectedContract(defaultActiveContractData);
+        let newAddress =
+          results.events.newContractCreated.returnValues.contract_address;
+        if (newAddress) {
+          setActiveACContractData(newAddress);
+        }
+
         return results;
       });
 
@@ -154,6 +160,7 @@ export const Web3InterfaceProvider = ({ children }) => {
       })
       .then((results) => {
         setIsLoading(false);
+        updatePromiseData();
         return results;
       });
 
@@ -199,6 +206,7 @@ export const Web3InterfaceProvider = ({ children }) => {
 
     setSelectedContract({
       ...selectedContract,
+      nominatedAddress: await getNominee(AccountabilityCheckerContract),
       isPromiseActive: await getIsPromiseActive(AccountabilityCheckerContract),
       promiseDeadline: await getPromiseDeadline(AccountabilityCheckerContract),
       checkOpen: await getCheckOpen(AccountabilityCheckerContract),
@@ -238,13 +246,7 @@ export const Web3InterfaceProvider = ({ children }) => {
       }
     }
   };
-  const removeFinalCheckinTimes = () => {
-    setSelectedContract({
-      ...selectedContract,
-      checkOpen: null,
-      checkClose: null,
-    });
-  };
+
   const submitPromiseCheckIn = async (checkInResult) => {
     setIsLoading(true);
     const { instance: AccountabilityCheckerContract } = selectedContract;
@@ -263,6 +265,7 @@ export const Web3InterfaceProvider = ({ children }) => {
       .then(async (results) => {
         setIsLoading(false);
         updatePromiseData();
+        getPromisePrivateData();
         console.log(results);
         return results;
       });
@@ -298,6 +301,13 @@ export const Web3InterfaceProvider = ({ children }) => {
       const { transactionHash, events } = data;
       return { transactionHash, events };
     }
+  };
+  const removeFinalCheckinTimes = () => {
+    setSelectedContract({
+      ...selectedContract,
+      checkOpen: null,
+      checkClose: null,
+    });
   };
 
   return (
