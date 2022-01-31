@@ -7,10 +7,6 @@
 
 Hello and welcome to my final project to for the course! Please send my Certificate NFT to this address = **0x7C24027B1C9A1b7E4c300dcBcBbCf48CC020a656**
 
-e5b293105ccd490f32e18047351bb7fb434abebdea587cbe412acf32391a53cb contracts
-e94f21755fa69fb3974b4ada89e2c4ff2b66aa2c7f6f14027de2b788eb6f9ded owner
-3d4a64928c93b0e43f55be0de47806f3656f1072a6cbb67a9fe31061969d7081 nominee
-
 ---
 
 ### Project Structure
