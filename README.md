@@ -2,7 +2,7 @@
 
 ### _My promise is BOND!_ 💯
 
-- Website = https://michasa.github.io/blockchain-developer-bootcamp-final-project/ (Provider required!)
+- Website = https://michasa.github.io/blockchain-developer-bootcamp-final-project/ (Provider required! [rETH too](https://faucet.egorfine.com/)
 - Screencast walkthrough = (Link to this is in the _final-project-checklist.txt_ file)
 
 Hello and welcome to my final project to for the course! Please send my Certificate NFT to this address = **0x7C24027B1C9A1b7E4c300dcBcBbCf48CC020a656**
@@ -81,7 +81,7 @@ blockchain-developer-bootcamp-final-project
 
 ### _smartcontract_
 
-This folder contains my smart contract. It uses truffle for deployment and migration, and various other packages to work and so begin by installing them with
+This folder contains my smart contract. It uses truffle for development, deployment and migration, and various other packages to work and so begin by installing them with
 
 ```bash
 npm install
@@ -97,7 +97,7 @@ And their migration file is \_migrations/2_deploy_accountability_checker.js. The
 
 #### Tests
 
-This project contains approximately 50 tests to test the various aspects of both these contracts from start to finish of the proposed use of my smart-contract application. The _utils_ folder contains various constants and functions that are used repeatedly in the tests. To run them all use the command:
+This project contains approximately 50 tests (woo TDD) to test the various aspects of both these contracts from start to finish of the proposed use of my smart-contract application. The _utils_ folder contains various constants and functions that are used repeatedly in the tests. To run them all use the command:
 
 ```bash
 truffle test
@@ -113,8 +113,8 @@ truffle test test/3_Promise_Cashout.js
 
 #### Deployment
 
-The _truffle-config.js_ has been configured to deploy on the Ropesten network and requires 2 environment variables to work (see _.envsample_, remove the _sample_ bit of the file name to use ); `INFURA_API_KEY` which can be got [by signing up to INFURA](https://infura.io/) and `MNEMONIC` which is 24 word seed phrase to generate the wallets associated with the deployment.
-Please see _deployed_address.txt_ for the address of smart contracts have already deployed
+The _truffle-config.js_ has been configured to deploy on the Ropesten network and requires 2 environment variables to work, and these are provided by an .env file (see _.envsample_, remove the _sample_ bit of the file name to use with the project); `INFURA_API_KEY` which can be got [by signing up to INFURA](https://infura.io/) and `MNEMONIC` which is 24 word seed phrase to generate the wallets associated with the deployment. The first account in the wallet will be the owner of the deployed Accountability Contract Factory contract.
+Please see _deployed_address.txt_ for the address of smart contract that have been already deployed
 
 ---
 
@@ -127,7 +127,7 @@ nvm use; npm install
 
 ```
 
-There is an env file associated with this project (see _.envsample_, remove the _sample_ bit of the file name to use ), there isn't anything required at this stage. There was an intention to use the Ethscan api (REACT_APP_ETHSCAN_API_KEY = "") but it was never implemented
+There is an env file associated with this project (see _.envsample_), apart from removing the _sample_ bit to use it there isn't anything required at this stage. There was an intention to use the Ethscan api (REACT_APP_ETHSCAN_API_KEY = "") but it was never implemented
 
 #### Localhost
 
@@ -144,7 +144,7 @@ A provider such as Metamask is required to interact with the project.
 
 There are so many things going on with this part of the project but here are ones of note:
 
-- **_accountabil-eth-y/src/contexts/index.js _**: Context Provider, contains various functions that are imported by pages to call functions on the AccountabilityCheckerFactory and AccountabilityChecker contracts
+- **_accountabil-eth-y/src/contexts/index.js _**: Context Provider, contains various functions that are imported by pages to call functions on the AccountabilityCheckerFactory and AccountabilityChecker contracts to get data and action transactions
 - **_accountabil-eth-y/src/pages _**: pages of the application that users interact with are stored here.
 - **_accountabil-eth-y/src/smart-contract/ _**: Where the ABI of the AccountabilityCheckerFactory and AccountabilityChecker contracts is kept (please update this if you make changes to the smart contracts in smartcontract/contracts) and functions that instantiate Contract objects from them.
 - **_accountabil-eth-y/src/Routes.js _**: Defines the routing structure of the application.
