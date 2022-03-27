@@ -1,12 +1,10 @@
-import Web3 from "web3";
-let web3 = new Web3(Web3.givenProvider);
-let { isAddress, toBN, asciiToHex, hexToUtf8 } = web3.utils;
+const { isAddress, toBN, asciiToHex, hexToUtf8 } = require("web3-utils");
 
 export const as2DecimalPlace = (amount) => {
-  return (Math.round(amount * 100) / 100).toFixed(2);
+  return (Math.round(amount)).toFixed(2);
 };
 
-export const isValidNonEmptyAddress = (address) => {
+export const isValidAddress = (address) => {
   return !!(isAddress(address) && !toBN(address).isZero());
 };
 

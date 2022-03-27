@@ -21,7 +21,7 @@ blockchain-developer-bootcamp-final-project
 │  │  ├─ components
 │  │  │  ├─ ExchangeRates.js
 │  │  │  ├─ Loader.js
-│  │  │  ├─ PotTotals.js
+│  │  │  ├─ DisplayPotTotals.js
 │  │  │  ├─ PromiseDefinitionForm.js
 │  │  │  ├─ RequirementsGate.js
 │  │  │  └─ TransactionResultScreen.js

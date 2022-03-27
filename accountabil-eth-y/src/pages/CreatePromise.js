@@ -1,82 +1,112 @@
 import dayjs from "dayjs";
-import React, { useContext, useState, useEffect } from "react";
-import Web3 from "web3";
+import { useContext, useState, useEffect } from "react";
 import Loader from "../components/Loader";
 import PromiseDefinitionForm from "../components/PromiseDefinitionForm";
 import RequirementsGate from "../components/RequirementsGate";
 import TransactionResultScreen from "../components/TransactionResultScreen";
-import { Web3Interface } from "../contexts/Web3Interface";
-import { returnHexArray } from "../utils/functions";
+
+import { Web3Interface } from "../contexts/web3";
+import { isValidAddress, returnHexArray } from "../utils/functions";
+
 import { userResponseSchema } from "../utils/Validation/PromiseDefintion";
 
-let web3 = new Web3(Web3.givenProvider);
-let { toWei } = web3.utils;
+const { toWei } = require("web3-utils");
 
-let CreatePromise = () => {
+const DEFAULT_USER_PROMISE = {
+  userCommitments: new Array(3).fill(""),
+  deadlineAsDaysAway: 1,
+  dailyWager: 0,
+};
+
+const CreatePromise = () => {
   let {
-    contractData: { address, isPromiseActive, nominatedAddress },
+    contractData: { contractAddress, isPromiseActive, nomineeAddress },
     contractFunctions: { createPromise },
-    isLoading,
   } = useContext(Web3Interface);
 
-  const [userPromise, setUserPromise] = useState({
-    userCommitments: new Array(3).fill(""),
-    deadlineAsDaysAway: 1,
-    dailyWager: 0,
-  });
-  const [error, setError] = useState(false);
-  const [isFunctionLoading, setIsFunctionLoading] = useState();
+  const [userPromise, setUserPromise] = useState(DEFAULT_USER_PROMISE);
+  const [userSubmissionError, setUserSubmissionError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
   const [transactionData, setTransactionData] = useState();
+  const [transactionError, setTransactionError] = useState();
 
-  useEffect(() => {
-    setIsFunctionLoading(isLoading);
-  }, [isPromiseActive, isLoading]);
-
-  let handleUpdate = (data, property) => {
+  let handlePromiseUpdate = (data, property) => {
     setUserPromise({
+      //FIXME I think this is a security issue....?
       ...userPromise,
       [property]: data,
     });
   };
 
-  let handleSubmit = async (event) => {
-    event.preventDefault();
+  const validateSubmission = (event) => {
+    event.preventDefault()
+    let removeEmptyCommitments = userPromise.userCommitments.filter(
+      (commitment) => commitment.length
+    );
 
-    let { error, value } = userResponseSchema.validate({
+    let userSubmission = {
       ...userPromise,
-      userCommitments: userPromise.userCommitments.filter(
-        (word) => word.length
-      ),
-    });
+      userCommitments: removeEmptyCommitments,
+    };
+    let { value, error } = userResponseSchema.validate(userSubmission);
 
     if (error) {
-      setError(true);
+      setUserSubmissionError("there is an issue with your submission!");
       return;
     } else {
-      setError(false);
-      let { userCommitments, dailyWager, deadlineAsDaysAway } = value;
-
-      let transactionArguments = {
-        commitments: returnHexArray(userCommitments),
-        dailyWager: toWei(dailyWager.toString()),
-        deadline: dayjs().add(deadlineAsDaysAway, "day").unix(),
-        totalPledgeAmount: toWei((dailyWager * deadlineAsDaysAway).toString()),
-      };
-
-      let data = await createPromise(transactionArguments);
-
-      if (data && !isFunctionLoading) {
-        setTransactionData(data);
-      } else {
-        console.error("I think something went wrong 4");
-      }
+      setUserSubmissionError(false);
+      handlePromiseSubmit(value)
     }
-    // let newData = dayjs.unix(days).add(days, "day").unix();
   };
+
+  let handlePromiseSubmit = async (validatedPromise) => {
+
+    let { userCommitments, dailyWager, deadlineAsDaysAway } = validatedPromise;
+
+    let transactionArguments = {
+      commitments: returnHexArray(userCommitments),
+      dailyWager: toWei(dailyWager.toString()),
+      deadline: dayjs().add(deadlineAsDaysAway, "day").unix(),
+      totalPledgeAmount: toWei(((dailyWager * deadlineAsDaysAway).toFixed(4)).toString()),
+    };
+
+    setIsLoading(true);
+    let { err, txnReceipt } = await createPromise(transactionArguments);
+    setIsLoading(false);
+
+    if (err) {
+      setTransactionError({
+        errorMessage: err,
+      });
+    } else {
+      console.log(txnReceipt)
+      // const { blockHash, blockNumber, transactionHash, events } = txnReceipt;
+      // console.log(events)
+
+      // const {
+      //   nomineeSet: {
+      //     returnValues: { nominee_address },
+      //   },
+      // } = events;
+
+      // setTransactionData({
+      //   blockHash,
+      //   blockNumber,
+      //   transactionHash,
+      //   // returnedData: {
+      //   //   label: "New Nominee Set!",
+      //   //   data: nominee_address,
+      //   // },
+      // });
+    }
+  }
+    ;
+
   return (
     <main>
       <RequirementsGate
-        isValid={address}
+        isValid={contractAddress}
         message="Please select a contract to begin or please create and then select one"
       >
         <RequirementsGate
@@ -84,20 +114,21 @@ let CreatePromise = () => {
           message="This contract has an active promise! Please let it reach its deadline and cashout to define a new one"
         >
           <RequirementsGate
-            isValid={nominatedAddress}
+            isValid={isValidAddress(nomineeAddress)}
             message="Please set a nominee before you define a promise!"
           >
             <TransactionResultScreen
-              success={transactionData && !isFunctionLoading}
+              success={transactionData && !isLoading}
               data={transactionData}
             >
-              {isFunctionLoading && <Loader />}
+              {isLoading && <Loader />}
               <PromiseDefinitionForm
                 userPromiseData={userPromise}
-                handleSubmitForm={handleSubmit}
-                handleUpdateData={handleUpdate}
-                error={error}
+                validateSubmission={validateSubmission}
+                handlePromiseUpdate={handlePromiseUpdate}
               />
+              {/* {userSubmissionError && (<b>{userSubmissionError} </b>)}
+              {transactionError && (<b>{transactionError} </b>)} */}
             </TransactionResultScreen>
           </RequirementsGate>
         </RequirementsGate>

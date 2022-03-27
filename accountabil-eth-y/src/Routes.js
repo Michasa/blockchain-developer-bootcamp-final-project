@@ -9,7 +9,7 @@ import {
   Cashout,
   NotFound,
 } from "./pages";
-import { Web3InterfaceProvider } from "./contexts/Web3Interface/";
+import { Web3InterfaceProvider } from "./contexts/web3/";
 import "./styles/index.scss";
 
 function App() {

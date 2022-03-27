@@ -1,9 +1,9 @@
-import React, { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect } from "react";
 import Loader from "../components/Loader";
-import PotTotals from "../components/PotTotals";
+import DisplayPotTotals from "../components/DisplayPotTotals";
 import RequirementsGate from "../components/RequirementsGate";
 import TransactionResultScreen from "../components/TransactionResultScreen";
-import { Web3Interface } from "../contexts/Web3Interface";
+import { Web3Interface } from "../contexts/web3";
 
 const defaultPromiseData = {
   commitments: [],
@@ -20,7 +20,7 @@ function CheckIn() {
   const [transactionData, setTransactionData] = useState();
 
   let {
-    contractData: { address, isPromiseActive },
+    contractData: { contractAddress, isPromiseActive },
     contractFunctions: {
       getPromisePrivateData: _getPromisePrivateData,
       submitCheckIn,
@@ -28,10 +28,10 @@ function CheckIn() {
     isLoading,
   } = useContext(Web3Interface);
 
-  useEffect(() => {
-    getPrivatePromiseData();
-    setIsTxnLoading(isLoading);
-  }, [address, isLoading]);
+  // useEffect(() => {
+  //   getPrivatePromiseData();
+  //   setIsTxnLoading(isLoading);
+  // }, [contractAddress, isLoading]);
 
   const getPrivatePromiseData = async () => {
     let data = await _getPromisePrivateData();
@@ -69,7 +69,7 @@ function CheckIn() {
 
   return (
     <RequirementsGate
-      isValid={!!address}
+      isValid={!!contractAddress}
       message="Please select a contract to begin or please create and then select one"
     >
       <RequirementsGate
@@ -84,7 +84,7 @@ function CheckIn() {
           <main>
             <h1> Submit Check</h1>
 
-            <PotTotals pots={promisePrivateData.pots} />
+            <DisplayPotTotals pots={promisePrivateData.pots} />
             <form onSubmit={handleTxnSubmit}>
               <h2>
                 Have you done what you promised? 👇 (

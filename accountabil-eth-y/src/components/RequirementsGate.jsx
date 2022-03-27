@@ -1,23 +1,29 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-function RequirementsGate({ isValid, message, children, nohomepage }) {
+const RequirementGate = ({
+  isValid,
+  message,
+  children,
+  showHomepage = true,
+}) => {
+  // TODO maybe give validations as array?
   return (
     <>
       {isValid ? (
         <>{children}</>
       ) : (
-        <div>
+        <>
           <h1>{message}</h1>
-          {!nohomepage && (
+          {showHomepage && (
             <Link to="/" aria-disabled>
               Return to Homepage
             </Link>
           )}
-        </div>
+        </>
       )}
     </>
   );
-}
+};
 
-export default RequirementsGate;
+export default RequirementGate;

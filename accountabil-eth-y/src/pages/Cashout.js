@@ -1,13 +1,13 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Loader from "../components/Loader";
 import RequirementsGate from "../components/RequirementsGate";
 import TransactionResultScreen from "../components/TransactionResultScreen";
 
-import { Web3Interface } from "../contexts/Web3Interface";
+import { Web3Interface } from "../contexts/web3";
 
 function Cashout() {
   let {
-    contractData: { isPromiseActive, address },
+    contractData: { isPromiseActive, contractAddress },
     contractFunctions: { cashoutPromise },
     isLoading,
   } = useContext(Web3Interface);
@@ -31,7 +31,7 @@ function Cashout() {
   return (
     <main>
       <RequirementsGate
-        isValid={address}
+        isValid={contractAddress}
         message="Please select a contract to begin or please create and then select one"
       >
         <RequirementsGate

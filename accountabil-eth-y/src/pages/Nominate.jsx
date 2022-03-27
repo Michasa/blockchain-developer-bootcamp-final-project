@@ -1,42 +1,64 @@
-import React, { useState, useContext, useEffect } from "react";
+import { useState, useContext } from "react";
 import RequirementsGate from "../components/RequirementsGate";
 import Loader from "../components/Loader";
 import TransactionResultScreen from "../components/TransactionResultScreen";
-import { Web3Interface } from "../contexts/Web3Interface";
-import { isValidNonEmptyAddress } from "../utils/functions";
+import { Web3Interface } from "../contexts/web3";
+import { isValidAddress } from "../utils/functions";
 
-function Nominate() {
+const Nominate = () => {
   const [newNominee, setNewNominee] = useState("");
-  const [isTxnLoading, setIsTxnLoading] = useState();
+  const [userSubmissionError, setUserSubmissionError] = useState("");
+
+  const [isLoading, setIsLoading] = useState(false);
   const [transactionData, setTransactionData] = useState();
+  const [transactionError, setTransactionError] = useState();
+
   let {
-    contractData: { address, nominatedAddress, isPromiseActive },
+    contractData: { contractAddress, nomineeAddress, isPromiseActive },
     contractFunctions: { setNominee },
-    isLoading,
   } = useContext(Web3Interface);
 
-  useEffect(() => {
-    setNewNominee(null);
-    setIsTxnLoading(isLoading);
-  }, [address, isLoading]);
-
-  let handleTxnSubmit = async (event) => {
+  let handleNomineeSubmission = async (event) => {
     event.preventDefault();
-    if (isValidNonEmptyAddress(newNominee))
-      console.error("This isnt a valid address");
+    if (!isValidAddress(newNominee)) {
+      setUserSubmissionError("This is not a valid eth address");
+      return;
+    }
 
-    let data = await setNominee(newNominee);
-    if (data && !isTxnLoading) {
-      setTransactionData(data);
+    setIsLoading(true);
+    let { err, txnReceipt } = await setNominee(newNominee);
+    setIsLoading(false);
+
+    if (err) {
+      setTransactionError({
+        errorMessage: err,
+      });
     } else {
-      console.error("I think something went wrong 5");
+      const { blockHash, blockNumber, transactionHash, events } = txnReceipt;
+
+      const {
+        nomineeSet: {
+          returnValues: { nominee_address },
+        },
+      } = events;
+
+      setTransactionData({
+        blockHash,
+        blockNumber,
+        transactionHash,
+        returnedData: {
+          label: "New Nominee Set!",
+          data: nominee_address,
+        },
+      });
     }
   };
 
   return (
     <main>
+      {/* FIXME fix requirement gates */}
       <RequirementsGate
-        isValid={address}
+        isValid={contractAddress}
         message="Please select a contract to begin or please create and then select one"
       >
         <RequirementsGate
@@ -44,11 +66,11 @@ function Nominate() {
           message="This contract has an active promise! Please let it expire and cashout to nominate a new address"
         >
           <TransactionResultScreen
-            success={transactionData && !isTxnLoading}
+            success={transactionData && !isLoading}
             data={transactionData}
           >
-            {isTxnLoading && <Loader />}
-            <div className="">
+            {isLoading && <Loader />}
+            <div>
               <h1> Set your Nominee!</h1>
               <p>
                 Please provide a ETH account that will recieve the amount in
@@ -61,12 +83,12 @@ function Nominate() {
                 <li> This promise contract</li>
               </ul>
 
-              <form onSubmit={handleTxnSubmit}>
+              <form onSubmit={handleNomineeSubmission}>
                 <p>
                   Your current nominated address is:
                   <b>
-                    {isValidNonEmptyAddress(nominatedAddress) ? (
-                      <span>{nominatedAddress}</span>
+                    {isValidAddress(nomineeAddress) ? (
+                      <span>{nomineeAddress}</span>
                     ) : (
                       <span>
                         NONE! Please set one before you set up your promise
@@ -82,10 +104,12 @@ function Nominate() {
                     required
                     value={newNominee}
                     onChange={(event) => setNewNominee(event.target.value)}
-                    disabled={isTxnLoading}
+                    disabled={isLoading}
                   />
                 </label>
-                <input type="submit" disabled={isTxnLoading} />
+                <input type="submit" disabled={isLoading} />
+                {transactionError && <p>{transactionError.errorMessage}</p>}
+                {userSubmissionError && <b>{userSubmissionError}</b>}
               </form>
             </div>
           </TransactionResultScreen>
@@ -93,6 +117,6 @@ function Nominate() {
       </RequirementsGate>
     </main>
   );
-}
+};
 
 export default Nominate;

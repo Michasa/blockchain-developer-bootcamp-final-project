@@ -10,6 +10,6 @@ export const AccountabilityContractFactory = new web3.eth.Contract(
   process.env.REACT_APP_ACCOUNTABILITY_CHECKER_FACTORY_ADDRESS
 );
 
-export const createAccountabilityContract = (userAddress) => {
+export const createAccountabilityContractInstance = (userAddress) => {
   return new web3.eth.Contract(AccountabilityCheckerABI, userAddress);
 };

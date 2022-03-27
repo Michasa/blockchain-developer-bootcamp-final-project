@@ -28,7 +28,8 @@ h5 {
 div#root > div {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 60vh;
+  border: solid 1px hotpink;
 }
 h1 > a {
   text-decoration: none;
